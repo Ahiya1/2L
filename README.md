@@ -1,10 +1,72 @@
 # 2L - Two-Level Orchestration System
 
-2L is an AI agent orchestration system that breaks down complex development tasks into manageable iterations executed by specialized agents. It provides real-time observability through an event system and dashboard, enabling you to monitor agent progress, track phases, and debug orchestrations.
+2L is an AI agent orchestration system that breaks down complex development tasks into manageable iterations executed by specialized agents.
 
-## Overview & Quick Start
+---
 
-### What is 2L?
+## Quick Start (5 Minutes)
+
+Get up and running with 2L in 5 simple steps:
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/ahiyalala/2L.git && cd 2L
+```
+
+### 2. Install 2L
+```bash
+./2l.sh install
+```
+
+This installs all agents and commands to `~/.claude/`.
+
+### 3. Setup Database Access
+```bash
+/2l-setup-db
+```
+
+Configures Claude to access Supabase local database (requires sudo password).
+
+### 4. (Optional) Setup MCPs
+```bash
+/2l-setup-mcps
+```
+
+Guided setup for Playwright and Chrome DevTools MCP servers.
+
+### 5. Start Building
+```bash
+cd ~/your-project
+/2l-mvp "build a todo app with React and Supabase"
+```
+
+In another terminal, monitor progress:
+```bash
+/2l-dashboard
+```
+
+**Done!** Your first orchestration is running.
+
+---
+
+## Table of Contents
+
+- [Quick Start](#quick-start-5-minutes)
+- [What is 2L?](#what-is-2l)
+- [Core Workflow](#core-workflow)
+- [Event System Architecture](#event-system-architecture)
+- [Dashboard Access](#dashboard-access)
+- [Advanced Topics](#advanced-topics)
+  - [MCP Integration](#mcp-integration)
+  - [GitHub Integration](#github-integration)
+  - [Setup Verification](#setup-verification)
+  - [Architecture Decisions](#architecture-decisions)
+- [Troubleshooting](#troubleshooting)
+- [Additional Resources](#additional-resources)
+
+---
+
+## What is 2L?
 
 2L (Two-Level) orchestrates AI agents to build software projects by:
 - Breaking your vision into iterations
@@ -15,7 +77,9 @@
 
 **Target audience:** Developers who want to build MVPs, prototypes, or complete features using AI agents with full visibility into the orchestration process.
 
-### Core Workflow
+---
+
+## Core Workflow
 
 ```bash
 # Option 1: Interactive requirements gathering
@@ -38,7 +102,7 @@ The `/2l-mvp` command will:
 4. Push to GitHub (if `gh` CLI configured)
 5. Emit events throughout for real-time monitoring
 
-### Quick Example
+### Example Usage
 
 ```bash
 # Navigate to your project directory
@@ -362,7 +426,9 @@ The dashboard displays:
 
 ---
 
-## MCP Integration
+## Advanced Topics
+
+### MCP Integration
 
 ### What are MCPs?
 
@@ -522,9 +588,7 @@ If an MCP is unavailable during orchestration:
 - Provides recommendations for manual testing
 - **Orchestration never fails due to missing MCPs**
 
----
-
-## GitHub Integration
+### GitHub Integration
 
 ### Why `gh` CLI?
 
@@ -700,9 +764,7 @@ git push origin main
 git push origin --tags
 ```
 
----
-
-## Setup Verification
+### Setup Verification
 
 ### Prerequisites Checklist
 
@@ -1011,9 +1073,11 @@ tail -f .2L/events.jsonl
 
 ---
 
-## Architecture Decisions
+## Additional Resources
 
-### Decision 1: Why JSONL for Events?
+### Architecture Decisions
+
+#### Decision 1: Why JSONL for Events?
 
 **Chosen:** JSONL (JSON Lines) - one JSON object per line
 
@@ -1048,9 +1112,7 @@ tail -f .2L/events.jsonl
 
 **Conclusion:** JSONL provides simplicity, performance, and debuggability for 2L's event system.
 
----
-
-### Decision 2: Why `gh` CLI Instead of GitHub MCP?
+#### Decision 2: Why `gh` CLI Instead of GitHub MCP?
 
 **Chosen:** GitHub CLI (`gh`) for all GitHub operations
 
@@ -1086,9 +1148,7 @@ tail -f .2L/events.jsonl
 
 **Conclusion:** `gh` CLI provides simplicity and reliability for 2L's GitHub integration.
 
----
-
-### Decision 3: Why Polling for Dashboard?
+#### Decision 3: Why Polling for Dashboard?
 
 **Chosen:** Dashboard polls `events.jsonl` every 2 seconds
 
@@ -1124,9 +1184,7 @@ tail -f .2L/events.jsonl
 
 **Conclusion:** Polling provides adequate real-time updates with minimal complexity.
 
----
-
-### Decision 4: Why HTTP Server for Dashboard?
+#### Decision 4: Why HTTP Server for Dashboard?
 
 **Chosen:** Python HTTP server bound to localhost
 
@@ -1160,10 +1218,6 @@ tail -f .2L/events.jsonl
 - HTTP server is simpler and standard
 
 **Conclusion:** HTTP server solves browser CORS restrictions while maintaining security (localhost-only).
-
----
-
-## Additional Resources
 
 ### Commands Reference
 

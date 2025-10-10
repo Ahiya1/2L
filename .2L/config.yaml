@@ -5,10 +5,10 @@
 current_plan: plan-3
 
 # Global iteration counter (across all plans)
-global_iteration_counter: 1
+global_iteration_counter: 2
 
 # Current phase (for resumability)
-current_phase: validation
+current_phase: healing
 
 # Plans history
 plans:

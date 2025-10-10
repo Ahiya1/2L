@@ -1,0 +1,337 @@
+# Master Plan for 2L Observability & Reliability Improvements
+# Created: 2025-10-08T15:45:00Z
+# Plan ID: plan-2
+
+plan_id: plan-2
+created_at: "2025-10-08T15:45:00Z"
+vision_file: .2L/plan-2/vision.md
+
+# Plan Status
+status: COMPLETE
+completed_at: "2025-10-08T18:20:00Z"
+
+# Iteration Strategy
+iteration_strategy: multi
+total_iterations: 2
+
+# Strategy Summary
+strategy: |
+  Two-iteration approach: Core Observability (iter 1) then Setup Verification & Documentation (iter 2).
+
+  Iteration 1 fixes the critical pain point - broken event system and invisible orchestration.
+  Delivers immediate value by making 2L observable in real-time through working dashboard.
+
+  Iteration 2 improves onboarding experience with MCP verification tools and comprehensive documentation.
+  Validates GitHub CLI integration and updates README to reflect current architecture.
+
+  Foundation already exists (event logger, dashboard template, GitHub integration) - this is integration work.
+
+# Complexity Assessment
+overall_complexity: MEDIUM-HIGH
+complexity_rationale: |
+  - 7 features touching 15+ files across multiple layers
+  - System-wide coordination (10 agent files need consistent updates)
+  - BUT: Foundation 90% ready - event logger exists, dashboard template exists
+  - This is "wiring work" not "greenfield development"
+  - Low technical risk, high coordination requirement
+
+# Global Iteration Numbering
+iterations:
+  - iteration_id: 1
+    global_iteration: 1
+    phase_name: "Core Observability System"
+    vision: "Make 2L orchestration visible and debuggable in real-time"
+
+    scope:
+      - "Event System Foundation: Document and implement orchestrator event emission (plan_start, phase_change, iteration_start/complete, complexity_decision)"
+      - "Agent Event Integration: Add 'Event Emission' sections to all 10 agent markdown files with agent_start/agent_complete patterns"
+      - "Dashboard Implementation: Create /2l-dashboard command with HTTP server, dynamic port allocation (8080-8099), browser opening"
+      - "Dashboard Access: /2l-dashboard-stop command, port reuse from config, multi-project support (20 concurrent dashboards)"
+      - "Orchestrator Documentation: Update /2l-mvp.md with all event emission points and payload examples"
+      - "Event Validation: Verify .2L/events.jsonl format, test dashboard parsing, end-to-end orchestration test"
+
+    detailed_features:
+      - feature: "Event System Redesign"
+        components:
+          - "Document orchestrator event emission points in commands/2l-mvp.md"
+          - "Implement events: plan_start, phase_change, iteration_start, iteration_complete, complexity_decision"
+          - "Validate event format: {timestamp, event_type, phase, agent_id, data}"
+          - "Test .2L/events.jsonl creation and JSONL format"
+        acceptance_criteria:
+          - "Orchestrator emits events on every phase transition"
+          - "Orchestrator emits events on iteration start/complete"
+          - "Events include: timestamp, event_type, phase, agent_id, data"
+          - "All events written to .2L/events.jsonl"
+          - "Event format matches dashboard expectations"
+
+      - feature: "Update Agent Templates (10 files)"
+        components:
+          - "Add 'Event Emission' section to: 2l-builder, 2l-explorer, 2l-planner"
+          - "Add 'Event Emission' section to: 2l-integrator, 2l-iplanner, 2l-ivalidator"
+          - "Add 'Event Emission' section to: 2l-validator, 2l-healer, 2l-master-explorer, 2l-dashboard-builder"
+          - "Each agent: Instructions for agent_start event (after reading context, before work)"
+          - "Each agent: Instructions for agent_complete event (after work, before writing report)"
+          - "Provide bash example: log_2l_event 'agent_start' 'message' '$phase' 'agent-id'"
+        acceptance_criteria:
+          - "All 10 agents have 'Event Emission' section"
+          - "Instructions for agent_start event (after reading context, before work)"
+          - "Instructions for agent_complete event (after work, before writing report)"
+          - "Example bash commands using log_2l_event function"
+          - "Clear placement in agent workflow"
+
+      - feature: "Dashboard Implementation with HTTP Server"
+        components:
+          - "Create commands/2l-dashboard.md command file"
+          - "Dynamic port allocation: Find available port in 8080-8099 range"
+          - "Start Python HTTP server: python3 -m http.server $PORT"
+          - "Store dashboard_port and dashboard_pid in .2L/config.yaml"
+          - "Open browser to http://localhost:$PORT/dashboard/index.html"
+          - "Port reuse: Check config.yaml on reopening, reuse existing port if server running"
+          - "Create commands/2l-dashboard-stop.md command file"
+          - "Stop server: kill $dashboard_pid, clean up config"
+        acceptance_criteria:
+          - "Dashboard command finds available port (8080-8099)"
+          - "Starts HTTP server on available port"
+          - "Stores port in .2L/config.yaml for reuse"
+          - "Opens browser automatically"
+          - "Supports 20 concurrent project dashboards"
+          - "/2l-dashboard-stop cleanly stops server"
+
+      - feature: "Orchestrator Documentation Updates"
+        components:
+          - "Update commands/2l-mvp.md with orchestrator event emission points"
+          - "Document phase transition events clearly"
+          - "Document iteration lifecycle events"
+          - "Document complexity decision events"
+          - "Provide event payload structure examples"
+        acceptance_criteria:
+          - "/2l-mvp.md has all orchestrator event emission points documented"
+          - "Phase transition events clearly marked"
+          - "Iteration lifecycle events documented"
+          - "Complexity decision events included"
+          - "Examples of event payload structure"
+
+    dependencies:
+      iteration_dependencies: []
+      external_dependencies:
+        - "2l-event-logger.sh library (exists at ~/.claude/lib/)"
+        - "Python 3 for HTTP server (confirmed installed)"
+        - "Dashboard template (exists at ~/.claude/lib/2l-dashboard-template.html)"
+
+    success_criteria:
+      - ".2L/events.jsonl created during orchestration"
+      - "Orchestrator emits all lifecycle events (plan_start, phase_change, iteration_start/complete)"
+      - "All 10 agents emit agent_start and agent_complete events"
+      - "/2l-dashboard command works: finds port, starts server, opens browser"
+      - "Dashboard polls events.jsonl and displays real-time timeline"
+      - "Multi-project test: 2+ dashboards run simultaneously on different ports"
+      - "Event format validated: All events match {timestamp, event_type, phase, agent_id, data} schema"
+
+    estimated_duration_hours: 6
+    risk_level: MEDIUM
+    risk_details: |
+      MEDIUM risks:
+      - Event format consistency across orchestrator and 10 agents (mitigation: use template)
+      - Orchestrator event placement at correct workflow points (mitigation: document clearly, test thoroughly)
+      - Dashboard port conflicts (mitigation: dynamic allocation, store in config)
+
+      LOW risks:
+      - Agent updates are repetitive but straightforward
+      - Dashboard template already exists and works
+      - Event logger library already exists and works
+
+    status: COMPLETE
+    completed_at: "2025-10-08T17:50:00Z"
+    git_tag: 2l-plan-2-iter-1
+
+  - iteration_id: 2
+    global_iteration: 2
+    phase_name: "Setup Verification & Documentation"
+    vision: "Enable confident 2L setup with verification tools and accurate documentation"
+
+    scope:
+      - "MCP Verification Tool: Create /2l-check-mcps command to check Playwright, Chrome DevTools, Supabase, Screenshot"
+      - "MCP Status Reporting: Show ✅ Connected or ⚠️ Missing with setup links for each MCP"
+      - "GitHub CLI Verification: Test setup_github_repo() function, gh detection, auth checking, repo creation, push operations"
+      - "README Comprehensive Updates: Event system architecture, dashboard access, MCP requirements, GitHub integration, setup verification, troubleshooting"
+      - "Documentation Accuracy: Ensure README matches actual implementation from iteration 1"
+
+    detailed_features:
+      - feature: "MCP Connection Verification Command"
+        components:
+          - "Create commands/2l-check-mcps.md command file"
+          - "Check for Playwright MCP availability"
+          - "Check for Chrome DevTools MCP availability"
+          - "Check for Supabase Local MCP availability"
+          - "Check for Screenshot MCP availability"
+          - "Report status: ✅ Connected or ⚠️ Missing"
+          - "Provide setup links for missing MCPs"
+          - "Clarify which MCPs are optional vs required"
+          - "Fast execution (<1 second total)"
+        acceptance_criteria:
+          - "New command /2l-check-mcps exists"
+          - "Checks for: Playwright, Chrome DevTools, Supabase, Screenshot MCPs"
+          - "Reports: Connected ✅, Missing ⚠️, How to connect"
+          - "Documents which MCPs are optional vs required"
+          - "Clear setup instructions for each MCP"
+
+      - feature: "GitHub CLI Integration Verification"
+        components:
+          - "Test setup_github_repo() function in orchestrator"
+          - "Verify gh --version detection works"
+          - "Verify gh auth status checking works"
+          - "Test repo creation from plan directory name"
+          - "Verify commit pushing works"
+          - "Verify tag pushing works"
+          - "Document graceful degradation when gh unavailable"
+          - "Test error cases: no gh, not authenticated, network failure"
+        acceptance_criteria:
+          - "Test setup_github_repo() function logic"
+          - "Verify gh CLI detection works"
+          - "Verify repo creation from plan directory name"
+          - "Verify commit pushing works"
+          - "Verify tag pushing works"
+          - "Document the GitHub workflow in README"
+
+      - feature: "README Comprehensive Updates"
+        components:
+          - "Event System Architecture section: flow diagram, event types, format, why this pattern"
+          - "Dashboard Access section: /2l-dashboard command, HTTP server, port allocation, multi-project support"
+          - "MCP Requirements section: which MCPs, what they enable, optional vs required, setup instructions"
+          - "GitHub Integration section: why gh CLI (not GitHub MCP), setup (install + gh auth login), what gets pushed"
+          - "Setup Verification section: /2l-check-mcps usage, gh auth status, test orchestration"
+          - "Troubleshooting section: dashboard no events, MCP issues, GitHub push fails, port conflicts"
+          - "Architecture decisions: why JSONL, why gh CLI, why polling, why HTTP server"
+        acceptance_criteria:
+          - "Event system architecture documented"
+          - "MCP requirements clarified (which are optional/required)"
+          - "GitHub integration using gh CLI documented (not GitHub MCP)"
+          - "Setup verification steps included"
+          - "Architecture decisions explained (why gh CLI, why this event pattern)"
+          - "Troubleshooting section for common issues"
+
+    dependencies:
+      iteration_dependencies:
+        - 1
+      iteration_dependency_rationale: |
+        Iteration 2 depends on iteration 1 because:
+        - README must document the actual event system implementation from iter 1
+        - Dashboard access documentation requires working /2l-dashboard command from iter 1
+        - Event format examples come from validated events in iter 1
+      external_dependencies:
+        - "gh CLI (confirmed installed and authenticated)"
+        - "Working event system from iteration 1 (for documentation)"
+
+    success_criteria:
+      - "/2l-check-mcps command reports accurate MCP status"
+      - "MCP check shows status for all 4 MCPs with setup links"
+      - "GitHub CLI workflow verified: gh detection, auth check, repo creation, push, tags"
+      - "README documents: event system, dashboard access, MCPs, GitHub integration"
+      - "README includes setup verification steps"
+      - "README includes troubleshooting for common issues"
+      - "New developer can follow README and verify setup successfully"
+
+    estimated_duration_hours: 4
+    risk_level: LOW
+    risk_details: |
+      LOW risks:
+      - MCP verification is simple status checking (read-only, non-destructive)
+      - GitHub integration already partially working (just needs validation)
+      - Documentation writing is straightforward
+      - All features are independent and standalone
+
+    status: COMPLETE
+    completed_at: "2025-10-08T18:20:00Z"
+    git_tag: 2l-plan-2-iter-2
+
+# Global metadata
+metadata:
+  total_estimated_hours: 10
+  overall_risk_level: MEDIUM
+  requires_mvp_approval: true
+
+  # Explorer synthesis
+  exploration_summary:
+    num_explorers: 3
+    complexity_votes:
+      explorer_1: "COMPLEX (14-18 hours, system-wide)"
+      explorer_2: "MEDIUM-HIGH (8-12 hours, coordination)"
+      explorer_3: "MEDIUM (8-12 hours, documentation-heavy)"
+    consensus_complexity: "MEDIUM-HIGH"
+
+    iteration_votes:
+      explorer_1: "3 iterations (conservative)"
+      explorer_2: "2 iterations"
+      explorer_3: "2 iterations"
+    consensus_iterations: 2
+
+    key_findings:
+      - "Foundation 90% ready: event logger exists, dashboard template exists, GitHub integration exists"
+      - "This is integration work, not greenfield development"
+      - "Low technical risk, high coordination requirement (10 agent files)"
+      - "Dashboard without HTTP server is useless (CORS blocks file:// polling)"
+      - "Multi-project dashboard support requires dynamic port allocation"
+
+    critical_dependencies:
+      - "Event system must work before documenting (iter 1 → iter 2)"
+      - "Dashboard needs HTTP server to poll events (must be in iter 1)"
+      - "Agent updates need event format defined first (orchestrator → agents)"
+
+    strategic_insights:
+      - "Iteration 1 fixes critical pain: 'Dashboard shows no data'"
+      - "Iteration 2 improves onboarding but doesn't block functionality"
+      - "Graceful degradation everywhere: events optional, MCPs optional, GitHub optional"
+      - "Dashboard is underutilized - excellent template just needs events"
+
+# Files to be modified
+files_to_modify:
+  iteration_1:
+    new_files:
+      - "commands/2l-dashboard.md"
+      - "commands/2l-dashboard-stop.md"
+
+    modified_files:
+      - "commands/2l-mvp.md (add event emission documentation)"
+      - "agents/2l-builder.md (add Event Emission section)"
+      - "agents/2l-explorer.md (add Event Emission section)"
+      - "agents/2l-planner.md (add Event Emission section)"
+      - "agents/2l-integrator.md (add Event Emission section)"
+      - "agents/2l-iplanner.md (add Event Emission section)"
+      - "agents/2l-ivalidator.md (add Event Emission section)"
+      - "agents/2l-validator.md (add Event Emission section)"
+      - "agents/2l-healer.md (add Event Emission section)"
+      - "agents/2l-master-explorer.md (add Event Emission section)"
+      - "agents/2l-dashboard-builder.md (add Event Emission section)"
+
+  iteration_2:
+    new_files:
+      - "commands/2l-check-mcps.md"
+
+    modified_files:
+      - "README.md (comprehensive updates: events, dashboard, MCPs, GitHub, troubleshooting)"
+
+# Testing strategy
+testing_strategy:
+  iteration_1:
+    - "Test event logger: source library, call log_2l_event, verify .2L/events.jsonl"
+    - "Test orchestrator events: run /2l-mvp, check for plan_start, phase_change, iteration_start events"
+    - "Test agent events: run orchestration, grep for agent_start and agent_complete in events.jsonl"
+    - "Test dashboard command: run /2l-dashboard, verify port allocated, server started, browser opened"
+    - "Test multi-project: open dashboards for 2 different projects, verify different ports"
+    - "Test dashboard display: verify events appear in timeline, phases shown, agents tracked"
+
+  iteration_2:
+    - "Test MCP check: run /2l-check-mcps, verify accurate status for all 4 MCPs"
+    - "Test GitHub integration: create test project, run /2l-mvp, verify repo created and pushed"
+    - "Test README accuracy: follow setup instructions, verify each step works"
+    - "Test troubleshooting: intentionally create each error, verify troubleshooting section helps"
+
+# Post-MVP enhancements (explicitly out of scope)
+post_mvp_features:
+  - "Event analytics and aggregation (avg times, failure rates)"
+  - "WebSocket real-time streaming (replace polling)"
+  - "Multi-project dashboard (single view for all projects)"
+  - "Event replay and debugging mode"
+  - "MCP auto-setup scripts"
+  - "Event filtering in dashboard (by phase, agent, time)"
+  - "Historical event database"

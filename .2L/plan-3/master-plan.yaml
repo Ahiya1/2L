@@ -1,0 +1,191 @@
+plan_id: plan-3
+created_at: 2025-10-10T05:35:00Z
+status: PLANNED
+total_iterations: 2
+
+strategy: |
+  Transform 2L from a developer-only tool into a production-ready system with automated
+  installation, zero-config setup, and 5-minute onboarding experience.
+
+  Split work into two natural iterations:
+
+  1. **Foundation (Iteration 1)**: Setup automation infrastructure
+     - Installation script (2l.sh install)
+     - Database setup command (/2l-setup-db)
+     - MCP setup command (/2l-setup-mcps)
+     - Delivers immediate value: 5-minute setup on fresh machines
+     - Risk: HIGH (system-level operations, cross-platform, security)
+     - Estimated: 10-12 hours
+
+  2. **UX Polish (Iteration 2)**: Dashboard fixes and documentation
+     - Direct dashboard start (30s → <2s startup)
+     - Active agents tracking fix
+     - Simplified README
+     - Depends fully on Iteration 1 (references installation commands)
+     - Risk: LOW-MEDIUM (isolated changes, frontend fixes, documentation)
+     - Estimated: 5-7 hours
+
+  Complexity Assessment (consensus across 4 explorers):
+  - Explorer-1: MEDIUM (clear scope, bash focus, 6 distinct features)
+  - Explorer-2: COMPLEX (system integration, security, cross-platform)
+  - Explorer-3: MEDIUM (3 user flows, 15+ edge cases, clear patterns)
+  - Explorer-4: Focus on performance (30s → <2s dashboard is critical)
+
+  **Overall: MEDIUM-COMPLEX** → 2 iterations recommended
+
+  Key Success Metrics:
+  - 5-minute setup (git clone → first /2l-mvp)
+  - Dashboard <2s startup
+  - 95% database setup success rate
+  - Installation idempotency (10+ runs without errors)
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 1
+    name: "Setup Automation Infrastructure"
+    vision: "One-command installation with automated database and MCP setup - achieve 5-minute onboarding"
+    scope: |
+      **Features:**
+      1. Automated Installation Script (2l.sh install)
+         - Copy agents, commands, lib to ~/.claude/
+         - Handle existing files (backup, overwrite with --update)
+         - Idempotent (can run multiple times)
+         - Cross-platform (Ubuntu/Debian + macOS)
+         - Track state in ~/.claude/.2l-install.yaml
+         - Exit codes: 0=success, 1=error, 2=partial
+
+      2. Database Setup Command (/2l-setup-db)
+         - Interactive sudo password prompt
+         - Install PostgreSQL client (psql) with sudo
+         - Create .sudo_access.txt (chmod 600)
+         - Auto-add to .gitignore
+         - Test connection to localhost:54322
+         - Report success/failure with troubleshooting
+         - Idempotent (safe to re-run)
+
+      3. MCP Setup Command (/2l-setup-mcps)
+         - Detect OS (macOS vs Linux)
+         - Check existing claude_desktop_config.json
+         - Provide step-by-step Playwright MCP instructions
+         - Provide step-by-step Chrome DevTools MCP instructions
+         - Generate correct JSON config snippet
+         - Guide to OS-specific config file location
+         - Include validation steps
+         - Make MCPs optional (skippable)
+
+      **Acceptance Criteria:**
+      - [ ] 2l.sh install completes in <10 seconds on SSD
+      - [ ] Installation idempotent (run 10 times without errors)
+      - [ ] Database setup succeeds on fresh Ubuntu 24.04
+      - [ ] Database setup succeeds on macOS Sonoma
+      - [ ] MCP setup provides clear instructions for both servers
+      - [ ] All operations preserve user customizations
+      - [ ] Proper error messages for all failure modes
+
+      **Key Risks:**
+      - Symlink handling (current setup uses symlinks to /home/ahiya/2l-claude-config)
+      - Sudo password security (plain text requires strict permissions)
+      - Cross-platform compatibility (different package managers, paths)
+      - Existing installation migration (backup strategy)
+
+      **Dependencies:**
+      - Git (for repository operations)
+      - Bash (POSIX-compliant shell)
+      - Python 3 (for YAML parsing if needed)
+
+      **Technical Approach:**
+      - Bash scripting with clear variable names and comments
+      - YAML for installation state tracking
+      - Verbose output by default (can silence with -q)
+      - Pre-flight checks before making changes
+      - Rollback capability on failures
+
+    status: PENDING
+    dependencies: []
+
+  - iteration_id: 2
+    global_iteration: 2
+    name: "Dashboard UX & Documentation Polish"
+    vision: "Instant dashboard startup and beginner-friendly documentation for seamless user experience"
+    scope: |
+      **Features:**
+      4. Direct Dashboard Start (Fix /2l-dashboard)
+         - Remove agent spawning logic from command
+         - Read template from ~/.claude/lib/2l-dashboard-template.html
+         - Inline placeholder substitution (project name, timestamp, events path)
+         - Write HTML to .2L/dashboard/index.html directly
+         - Start Python HTTP server immediately
+         - Preserve port allocation (8080-8099)
+         - Preserve PID tracking
+         - Target: <2s startup (vs current 30s)
+
+      5. Active Agents Dashboard Fix
+         - Parse agent_start events from events.jsonl
+         - Parse agent_complete events from events.jsonl
+         - Match agent IDs between start/complete
+         - Show agents in "active" list between events
+         - Calculate real-time duration for active agents
+         - Remove from active list on completion
+         - Handle edge cases (orphaned starts, duplicates, out-of-order)
+         - Test with concurrent agents (multiple builders)
+
+      6. Simplified README
+         - Quick Start section at top (5 steps max)
+         - Installation: ./2l.sh install
+         - Setup: /2l-setup-db, /2l-setup-mcps
+         - First example: /2l-mvp "build X"
+         - Move advanced topics to later sections
+         - Add table of contents
+         - Include "5-minute setup test" validation
+         - Link to detailed docs for advanced users
+
+      **Acceptance Criteria:**
+      - [ ] Dashboard starts in <2 seconds (P95)
+      - [ ] Active agents section shows correct agents
+      - [ ] Duration updates in real-time for active agents
+      - [ ] Completed agents removed from active list
+      - [ ] Edge cases handled gracefully
+      - [ ] README quick start readable in <2 minutes
+      - [ ] New users can complete setup following README only
+      - [ ] Advanced topics easy to find via TOC
+
+      **Key Risks:**
+      - Event parsing edge cases (malformed JSONL, concurrent events)
+      - Template substitution breaking on special characters
+      - README restructure losing important information
+
+      **Dependencies:**
+      - Iteration 1 complete (lib/ directory exists with template)
+      - Event logging system functional (2l-event-logger.sh)
+      - Python 3 for HTTP server
+
+      **Technical Approach:**
+      - Bash string manipulation for template substitution
+      - JavaScript event parsing with defensive edge case handling
+      - Markdown restructuring (not rewriting) for README
+      - Preserve all existing functionality
+      - Test on real orchestration event streams
+
+    status: PENDING
+    dependencies:
+      - 1  # Fully depends on Iteration 1
+
+# Performance Targets
+performance_targets:
+  dashboard_startup: "<2 seconds (P95)"
+  installation_duration: "<10 seconds (SSD)"
+  setup_completion: "<5 minutes (total onboarding)"
+  database_connection_test: "<2 seconds"
+
+# Success Criteria (from vision)
+success_metrics:
+  - metric: "5-minute setup"
+    target: "Under 5 minutes on fresh Ubuntu 24.04 VM"
+  - metric: "Zero-config dashboard"
+    target: "Under 2 seconds startup time"
+  - metric: "Database access reliability"
+    target: "95% success rate without manual intervention"
+  - metric: "README comprehension"
+    target: "90% success rate in user testing (5/5 users successful)"
+  - metric: "Installation idempotency"
+    target: "100% success rate with no side effects"

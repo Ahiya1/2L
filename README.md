@@ -498,8 +498,8 @@ The dashboard displays:
 
 **Prerequisites:**
 ```bash
-# Database already running on port 5432
-# Connection: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+# Database already running on port 54322
+# Connection: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ```
 
 **What it enables for agents:**

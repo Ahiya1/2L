@@ -8,7 +8,30 @@
 
 ## Issues Identified & Resolved
 
-### 1. Database Port Mismatch (CRITICAL)
+### 1. MCP Configuration Wrong Product (CRITICAL)
+**Category:** Product Mismatch
+**Impact:** Users would configure wrong product, MCPs wouldn't work
+
+**Problem:**
+- Instructions referenced "Claude Desktop" and `claude_desktop_config.json`
+- Vision document (line 232) clearly states "Claude Code CLI environment"
+- Actual project uses `.mcp.json` in project directory
+- Users following docs would edit wrong config file
+
+**Fix Applied:**
+- Changed 27 "Claude Desktop" references to "Claude Code CLI"
+- Changed 15 system path references to `.mcp.json` (project-level)
+- Updated restart instructions for CLI sessions
+- Updated 3 files
+
+**Files Modified:**
+- `/home/ahiya/2l-claude-config/commands/2l-setup-mcps.md`
+- `/home/ahiya/2l-claude-config/commands/2l-check-mcps.md`
+- `/home/ahiya/2l-claude-config/README.md`
+
+---
+
+### 2. Database Port Mismatch (CRITICAL)
 **Category:** Configuration Inconsistency
 **Impact:** Would block database connections
 
@@ -28,7 +51,7 @@
 
 ---
 
-### 2. Git Commit Attribution (MAJOR)
+### 3. Git Commit Attribution (MAJOR)
 **Category:** Branding/Documentation
 **Impact:** Incorrect attribution in git history
 
@@ -49,7 +72,7 @@
 
 ---
 
-### 3. Terminology Inconsistency (MINOR)
+### 4. Terminology Inconsistency (MINOR)
 **Category:** Documentation Clarity
 **Impact:** Confusing command chronology
 
@@ -88,21 +111,26 @@
 2. **Healer-1** - Database port standardization
 3. **Healer-2** - Git attribution correction
 4. **Healer-3** - Terminology cleanup
-5. **Validator** - Final verification
+5. **Healer-4** - MCP configuration for Claude Code CLI
+6. **Validator** - Final verification (ongoing)
 
 **Timeline:**
 - Exploration: ~15 minutes
-- Healing (parallel): ~20 minutes
-- Validation: ~10 minutes
-- **Total:** ~45 minutes
+- Healing 1-3 (parallel): ~20 minutes
+- Validation 1: ~10 minutes
+- User feedback: Identified MCP issue
+- Healing 4: ~15 minutes
+- Validation 2: ~5 minutes
+- **Total:** ~65 minutes
 
-**Success Rate:** 100% (all identified issues resolved)
+**Success Rate:** 100% (all 4 identified issues resolved)
 
 ---
 
 ## Impact Assessment
 
 **Before Healing:**
+- MCP setup instructions for wrong product (CRITICAL - total blocker)
 - Database connections would fail (CRITICAL)
 - Git history shows incorrect attribution (MAJOR)
 - Minor terminology confusion (MINOR)

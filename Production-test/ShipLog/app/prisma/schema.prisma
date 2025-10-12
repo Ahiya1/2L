@@ -1,0 +1,67 @@
+// ShipLog Prisma Schema
+// Complete schema for all iterations (defined in Iteration 1)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  status      Status   @default(IDEA)
+  launchDate  DateTime?
+  techStack   String   // JSON string array (SQLite limitation)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  launches Launch[]
+  metrics  Metrics?
+
+  @@index([status])
+  @@index([launchDate])
+  @@index([updatedAt])
+}
+
+enum Status {
+  IDEA
+  BUILDING
+  SHIPPED
+  VALIDATED
+  ARCHIVED
+}
+
+model Launch {
+  id         String    @id @default(cuid())
+  productId  String
+  platform   String    // "ProductHunt", "Twitter", "ShowHN", "Reddit", "IndieHackers", "Newsletter", "Other"
+  launched   Boolean   @default(false)
+  launchDate DateTime?
+  url        String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, platform])
+  @@index([productId])
+  @@index([platform])
+}
+
+model Metrics {
+  id         String   @id @default(cuid())
+  productId  String   @unique
+  signups    Int      @default(0)
+  revenue    Float    @default(0)
+  lastUpdate DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}

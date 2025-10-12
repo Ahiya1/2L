@@ -1,0 +1,27 @@
+{
+  "name": "ghstats",
+  "version": "1.0.0",
+  "description": "CLI tool to fetch GitHub repository statistics",
+  "type": "module",
+  "main": "ghstats.js",
+  "bin": {
+    "ghstats": "./ghstats.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "github",
+    "cli",
+    "statistics",
+    "repository"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
+  "scripts": {
+    "start": "node ghstats.js"
+  }
+}

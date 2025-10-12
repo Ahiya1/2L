@@ -1,0 +1,147 @@
+plan_id: plan-1
+created_at: "2025-10-12T00:00:00Z"
+status: PLANNED
+total_iterations: 1
+
+strategy: |
+  BUILD COMPLETE CLI TOOL IN SINGLE ITERATION
+
+  Complexity Assessment: SIMPLE
+  - Single well-defined function (fetch and display GitHub repo stats)
+  - 4 core features, 6 success criteria
+  - Estimated duration: 3-6 hours
+  - No complex interdependencies
+
+  All 4 master explorers unanimously recommend SINGLE ITERATION because:
+  1. Linear execution flow (CLI → API → Format → Display)
+  2. All features tightly coupled and should be built together
+  3. Error handling is integral, not a separate phase
+  4. No natural separation points that justify multiple iterations
+
+  Key Architectural Decisions:
+  - Modular structure with lib/ directory (api-client, formatter, errors)
+  - Use Node.js 18+ with built-in fetch (zero HTTP dependencies)
+  - Use commander.js for CLI parsing
+  - Focus 30-35% of development effort on comprehensive error handling
+
+  Technology Stack:
+  - Runtime: Node.js 18+ (LTS)
+  - CLI Framework: commander.js
+  - HTTP Client: Built-in fetch API
+  - Output: Plain terminal output (optional chalk enhancement)
+
+  Critical Success Factors:
+  1. Comprehensive error handling (404, rate limits, network failures, invalid input)
+  2. Clear, actionable error messages with examples
+  3. Loading indicator during API fetch (improves perceived performance)
+  4. Input validation before API calls (fail fast)
+  5. Clean, readable terminal output with proper formatting
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 1
+    name: "Complete GitHub Stats CLI Tool"
+    vision: "Build fully functional CLI tool that fetches and displays GitHub repository statistics with robust error handling and clean terminal output"
+    scope: |
+      COMPREHENSIVE FEATURE SET (All 6 Success Criteria):
+
+      1. CLI Interface
+         - Accept repository identifier as argument (format: owner/repo)
+         - Use commander.js for argument parsing
+         - Support --help and --version flags
+         - Input validation with regex before API calls
+
+      2. GitHub API Integration
+         - Fetch repository statistics via GitHub REST API v3
+         - Endpoint: GET https://api.github.com/repos/{owner}/{repo}
+         - Parse JSON response to extract: stars, forks, open_issues, watchers
+         - Use built-in fetch (Node.js 18+) for zero dependencies
+         - Implement 10-second timeout
+
+      3. Error Handling (30-35% of development effort)
+         - Repository not found (404): "Repository 'owner/repo' not found"
+         - Rate limit exceeded (403): Display reset time and suggest authentication
+         - Network failures: Timeout, connection refused, DNS errors
+         - Invalid input format: Show usage example (owner/repo)
+         - Centralized error handler with specific error classification
+
+      4. Output Formatting
+         - Clean, readable terminal display
+         - Format: Repository name header + 4 metrics (stars, forks, issues, watchers)
+         - Number formatting with thousand separators (1,234 not 1234)
+         - Loading indicator: "Fetching repository stats..." during API call
+
+      5. Project Setup
+         - package.json with Node.js 18+ engine requirement
+         - Modular structure: ghstats.js + lib/ directory
+         - README with usage instructions and examples
+         - .gitignore for node_modules
+
+      6. Testing & Validation
+         - Manual testing with real repositories (facebook/react, microsoft/vscode)
+         - Error scenario validation (nonexistent repo, rate limits)
+         - Cross-platform terminal testing (Linux, macOS, Windows)
+
+      DEVELOPMENT ORDER:
+      1. Project initialization (package.json, directory structure)
+      2. CLI skeleton with commander.js
+      3. Input validation module
+      4. GitHub API client with comprehensive error handling
+      5. Output formatter with number formatting
+      6. Integration and end-to-end testing
+      7. Documentation (README)
+
+      ESTIMATED EFFORT BREAKDOWN:
+      - Project setup: 20 minutes
+      - CLI parsing: 30 minutes
+      - Input validation: 20 minutes
+      - API client: 1 hour
+      - Error handling: 1.5 hours (30-35% of total)
+      - Output formatting: 30 minutes
+      - Testing & polish: 1 hour
+      - Documentation: 30 minutes
+      Total: 5-6 hours
+
+      NO DEPENDENCIES on other iterations (this is iteration 1 of 1)
+    status: PENDING
+    dependencies: []
+    complexity_level: SIMPLE
+    estimated_duration: "5-6 hours"
+
+    # Key technical decisions
+    technical_notes: |
+      Architecture: Modular structure (recommended by Explorer 1)
+
+      File Structure:
+      ghstats/
+      ├── package.json
+      ├── ghstats.js (entry point, CLI setup)
+      ├── lib/
+      │   ├── api-client.js (GitHub API interaction)
+      │   ├── formatter.js (output formatting)
+      │   └── errors.js (error handling utilities)
+      └── README.md
+
+      Dependencies:
+      - commander: ^12.0.0 (CLI parsing)
+      - Node.js: >=18.0.0 (built-in fetch)
+
+      Error Handling Priority:
+      Explorer 2 & 3 emphasize that error handling is 30% of UX value.
+      Must handle:
+      1. 404 (repo not found)
+      2. 403 (rate limit with reset time)
+      3. Network errors (timeout, connection refused)
+      4. Invalid input (malformed owner/repo)
+
+      Performance Targets (Explorer 4):
+      - Total execution time: <1 second (p95)
+      - API latency: 100-500ms (GitHub API)
+      - Local processing: <100ms
+      - No optimization needed for MVP
+
+      UX Priorities (Explorer 3):
+      1. Loading indicator during API call (prevents perceived hanging)
+      2. Clear error messages with actionable suggestions
+      3. Plain text output (optional color enhancement later)
+      4. Thousand separators in numbers for readability

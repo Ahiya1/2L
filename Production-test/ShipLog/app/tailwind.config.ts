@@ -8,6 +8,20 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      keyframes: {
+        'accordion-open': {
+          from: { height: '0', opacity: '0' },
+          to: { height: 'var(--radix-accordion-content-height)', opacity: '1' },
+        },
+        'accordion-closed': {
+          from: { height: 'var(--radix-accordion-content-height)', opacity: '1' },
+          to: { height: '0', opacity: '0' },
+        },
+      },
+      animation: {
+        'accordion-open': 'accordion-open 0.2s ease-out',
+        'accordion-closed': 'accordion-closed 0.2s ease-out',
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

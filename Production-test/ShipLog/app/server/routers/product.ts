@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { router, loggedProcedure } from '../trpc'
 import { Status } from '@prisma/client'
+import { LAUNCH_PLATFORMS } from '@/lib/constants'
 
 // Validation schemas
 const createProductSchema = z.object({
@@ -71,6 +72,17 @@ export const productRouter = router({
         data: {
           ...data,
           techStack: JSON.stringify(techStack),
+          launches: {
+            createMany: {
+              data: LAUNCH_PLATFORMS.map(platform => ({
+                platform,
+                launched: false,
+              })),
+            },
+          },
+        },
+        include: {
+          launches: true,
         },
       })
 
@@ -109,5 +121,54 @@ export const productRouter = router({
       })
 
       return { success: true }
+    }),
+
+  // Get filtered products (with status, sort, search)
+  getFiltered: loggedProcedure
+    .input(z.object({
+      statusFilter: z.array(z.nativeEnum(Status)).optional(),
+      sortBy: z.enum(['updatedAt', 'launchDate', 'name', 'status']).default('updatedAt'),
+      searchQuery: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Helper function for dynamic sorting
+      const getSortOrder = (sortBy: string) => {
+        switch (sortBy) {
+          case 'launchDate':
+            return { launchDate: 'desc' as const }
+          case 'name':
+            return { name: 'asc' as const }
+          case 'status':
+            return { status: 'asc' as const }
+          case 'updatedAt':
+          default:
+            return { updatedAt: 'desc' as const }
+        }
+      }
+
+      const products = await ctx.prisma.product.findMany({
+        where: {
+          ...(input.statusFilter?.length && {
+            status: { in: input.statusFilter }
+          }),
+          ...(input.searchQuery && {
+            OR: [
+              { name: { contains: input.searchQuery } },
+              { description: { contains: input.searchQuery } },
+            ]
+          }),
+        },
+        orderBy: getSortOrder(input.sortBy),
+        include: {
+          launches: true,
+          metrics: true,
+        },
+        take: 50, // Limit results
+      })
+
+      return products.map((product) => ({
+        ...product,
+        techStack: JSON.parse(product.techStack) as string[],
+      }))
     }),
 })

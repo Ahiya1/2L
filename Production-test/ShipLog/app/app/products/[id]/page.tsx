@@ -3,6 +3,8 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { MetricsEditor } from '@/components/MetricsEditor'
+import { LaunchChecklist } from '@/components/LaunchChecklist'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -83,40 +85,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 {product.launches.length === 0 ? (
                   <p className="text-gray-500 text-sm">No launch platforms configured</p>
                 ) : (
-                  <div className="space-y-3">
-                    {product.launches.map((launch) => (
-                      <div
-                        key={launch.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-4 h-4 rounded-full ${
-                              launch.launched ? 'bg-green-500' : 'bg-gray-300'
-                            }`}
-                          />
-                          <div>
-                            <p className="font-medium">{launch.platform}</p>
-                            {launch.launched && launch.launchDate && (
-                              <p className="text-sm text-gray-500">
-                                {new Date(launch.launchDate).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {launch.url && (
-                          <a
-                            href={launch.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            View
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <LaunchChecklist productId={product.id} launches={product.launches} />
                 )}
               </CardContent>
             </Card>
@@ -124,31 +93,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
           {/* Sidebar - Metrics */}
           <div className="space-y-6">
-            {product.metrics && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Metrics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Signups</p>
-                    <p className="text-3xl font-bold">{product.metrics.signups}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Revenue</p>
-                    <p className="text-3xl font-bold">
-                      ${product.metrics.revenue.toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400">
-                      Last updated:{' '}
-                      {new Date(product.metrics.lastUpdate).toLocaleDateString()}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader>
+                <CardTitle>Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MetricsEditor productId={product.id} initialMetrics={product.metrics} />
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

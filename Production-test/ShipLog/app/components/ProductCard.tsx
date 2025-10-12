@@ -14,12 +14,65 @@ type ProductWithRelations = Omit<Product, 'techStack'> & {
 
 interface ProductCardProps {
   product: ProductWithRelations
+  viewMode?: 'grid' | 'list'
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
   const launchedPlatforms = product.launches.filter(l => l.launched).length
   const totalPlatforms = 7 // Fixed platform count
 
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  })
+
+  if (viewMode === 'list') {
+    return (
+      <Link href={`/products/${product.id}`}>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              {/* Left: Name + Status */}
+              <div className="flex items-center gap-4 flex-1">
+                <div>
+                  <h3 className="font-semibold text-lg">{product.name}</h3>
+                  <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
+                </div>
+              </div>
+
+              {/* Middle: Metrics */}
+              <div className="flex items-center gap-6 mx-6">
+                {product.metrics && (
+                  <>
+                    <div className="text-center">
+                      <div className="text-sm font-medium">{product.metrics.signups}</div>
+                      <div className="text-xs text-gray-500">Signups</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm font-medium">
+                        {currencyFormatter.format(product.metrics.revenue)}
+                      </div>
+                      <div className="text-xs text-gray-500">Revenue</div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Right: Status + Launches */}
+              <div className="flex items-center gap-4">
+                <StatusBadge status={product.status} />
+                <div className="text-sm text-gray-600">
+                  {launchedPlatforms}/{totalPlatforms} launched
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    )
+  }
+
+  // Grid view (existing code)
   return (
     <Link href={`/products/${product.id}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer">

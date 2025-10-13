@@ -48,6 +48,7 @@ export async function GET(
       gameEventEmitter.on('phase_change', messageHandler);
       gameEventEmitter.on('phase_complete', messageHandler);
       gameEventEmitter.on('discussion_complete', messageHandler);
+      gameEventEmitter.on('night_message', messageHandler);
 
       // 3. Keepalive heartbeat (15-second interval)
       // Prevents connection timeout, especially on proxies
@@ -69,6 +70,7 @@ export async function GET(
         gameEventEmitter.off('phase_change', messageHandler);
         gameEventEmitter.off('phase_complete', messageHandler);
         gameEventEmitter.off('discussion_complete', messageHandler);
+        gameEventEmitter.off('night_message', messageHandler);
 
         try {
           controller.close();

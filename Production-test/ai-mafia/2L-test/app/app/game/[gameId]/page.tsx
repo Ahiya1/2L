@@ -17,6 +17,7 @@ import { GameEventsProvider, useGameEvents } from '@/contexts/GameEventsContext'
 import PhaseIndicator from '@/components/PhaseIndicator';
 import PlayerGrid from '@/components/PlayerGrid';
 import DiscussionFeed from '@/components/DiscussionFeed';
+import MafiaChatPanel from '@/components/MafiaChatPanel';
 import VoteTally from '@/components/VoteTally';
 import ConnectionStatus from '@/components/ConnectionStatus';
 import CostMetrics from '@/components/CostMetrics';
@@ -141,39 +142,55 @@ function LiveGameContent({ gameId }: { gameId: string }) {
         </div>
 
         {/* Main content grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left column - Player Grid */}
-          <div className="md:col-span-1 lg:col-span-1">
+          <div className="lg:col-span-3">
             <PlayerGrid gameId={gameId} />
           </div>
 
-          {/* Center column - Discussion Feed */}
-          <div className="md:col-span-1 lg:col-span-1">
-            <DiscussionFeed gameId={gameId} playerNames={playerNames} />
-          </div>
-
-          {/* Right column - Vote Tally (conditional during VOTING phase) */}
-          <div className="md:col-span-2 lg:col-span-1 space-y-4">
-            {currentPhase === 'VOTING' ? (
-              <VoteTally gameId={gameId} playerCount={alivePlayers.length} />
-            ) : (
-              <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm h-[600px]">
-                <div className="text-sm text-gray-500 uppercase tracking-wide mb-3">
-                  Vote Tally
-                </div>
-                <div className="text-gray-600 text-sm text-center mt-10">
-                  {currentPhase === 'DISCUSSION'
-                    ? 'Vote tally will appear when voting phase begins...'
-                    : currentPhase
-                    ? `Current phase: ${currentPhase}`
-                    : 'Waiting for game to start...'}
+          {/* Center/Right - Discussion Feed & Mafia Chat (split during Night) */}
+          {currentPhase === 'NIGHT' ? (
+            // Split screen during Night phase: Discussion Feed | Mafia Chat
+            <>
+              <div className="lg:col-span-4">
+                <DiscussionFeed gameId={gameId} playerNames={playerNames} />
+              </div>
+              <div className="lg:col-span-5">
+                <div className="space-y-4">
+                  <MafiaChatPanel gameId={gameId} />
                 </div>
               </div>
-            )}
+            </>
+          ) : (
+            // Normal layout: Discussion Feed | Vote Tally
+            <>
+              <div className="lg:col-span-5">
+                <DiscussionFeed gameId={gameId} playerNames={playerNames} />
+              </div>
+              {/* Right column - Vote Tally (conditional during VOTING phase) */}
+              <div className="lg:col-span-4 space-y-4">
+                {currentPhase === 'VOTING' ? (
+                  <VoteTally gameId={gameId} playerCount={alivePlayers.length} />
+                ) : (
+                  <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm h-[600px]">
+                    <div className="text-sm text-gray-500 uppercase tracking-wide mb-3">
+                      Vote Tally
+                    </div>
+                    <div className="text-gray-600 text-sm text-center mt-10">
+                      {currentPhase === 'DISCUSSION'
+                        ? 'Vote tally will appear when voting phase begins...'
+                        : currentPhase
+                        ? `Current phase: ${currentPhase}`
+                        : 'Waiting for game to start...'}
+                    </div>
+                  </div>
+                )}
 
-            {/* Cost Metrics Panel */}
-            <CostMetrics gameId={gameId} />
-          </div>
+                {/* Cost Metrics Panel */}
+                <CostMetrics gameId={gameId} />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

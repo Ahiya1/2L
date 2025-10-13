@@ -23,6 +23,7 @@ import {
 } from '@/lib/game/phase-config';
 import type { GamePhase } from '@/lib/game/types';
 import { Card } from '@/components/ui/Card';
+import PhaseTimeline from '@/components/game/PhaseTimeline';
 
 interface PhaseIndicatorProps {
   gameId: string;
@@ -124,42 +125,50 @@ export default function PhaseIndicator({ gameId }: PhaseIndicatorProps) {
 
   return (
     <Card
-      className={`transition-colors duration-500 ${colorClasses.bg} border-2 ${colorClasses.border}`}
+      className={`transition-all duration-700 ease-in-out ${colorClasses.bg} border-2 ${colorClasses.border} shadow-lg`}
+      data-testid="phase-indicator"
+      data-phase={currentPhase || 'LOBBY'}
+      role="region"
+      aria-label="Game phase indicator"
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex-1">
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
+          <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
             Current Phase
           </div>
           <div
-            className={`text-2xl font-bold flex items-center gap-2 ${colorClasses.text}`}
+            className={`text-3xl font-bold flex items-center gap-3 ${colorClasses.text} transition-all duration-500`}
+            role="status"
+            aria-live="polite"
           >
-            <span className="text-3xl">{phaseConfig.icon}</span>
+            <span className="text-5xl animate-pulse-subtle" aria-hidden="true">{phaseConfig.icon}</span>
             <span>{phaseConfig.displayName}</span>
           </div>
 
           {/* Phase description */}
-          <div className="text-sm text-gray-600 mt-1 italic">
+          <div className="text-sm text-gray-700 mt-2 leading-relaxed">
             {phaseDescription}
           </div>
         </div>
 
-        <div className="text-right ml-4">
+        <div className="text-right ml-6">
           {/* Turn/Round counter */}
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
+          <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
             Round
           </div>
-          <div className="text-2xl font-bold text-gray-800">
-            {currentRound} <span className="text-sm text-gray-500">/ 40</span>
+          <div className="text-3xl font-bold text-gray-800">
+            {currentRound} <span className="text-lg text-gray-500">/ 40</span>
           </div>
 
           {/* Time remaining (if timed phase) */}
           {phaseConfig.duration > 0 && (
             <>
-              <div className="text-xs text-gray-500 uppercase tracking-wide mt-2">
+              <div className="text-xs text-gray-500 uppercase tracking-wide mt-3 font-semibold">
                 Time Left
               </div>
-              <div className="text-lg font-mono font-bold text-gray-800">
+              <div className={`text-2xl font-mono font-bold ${
+                timeRemaining < 10 ? 'text-red-600 animate-pulse' : 'text-gray-800'
+              }`}>
                 {formatTimeRemaining(timeRemaining)}
               </div>
             </>
@@ -169,26 +178,38 @@ export default function PhaseIndicator({ gameId }: PhaseIndicatorProps) {
 
       {/* Progress bar (only show if phase has duration) */}
       {phaseConfig.duration > 0 && (
-        <div className="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div
+          className="mt-5 bg-gray-300 rounded-full h-3 overflow-hidden shadow-inner"
+          role="progressbar"
+          aria-valuenow={timeRemaining}
+          aria-valuemin={0}
+          aria-valuemax={phaseConfig.duration}
+          aria-label={`Phase time remaining: ${formatTimeRemaining(timeRemaining)}`}
+        >
           <div
-            className={`h-full transition-all duration-1000 ${
+            className={`h-full transition-all duration-1000 ease-out ${
               currentPhase === 'NIGHT'
-                ? 'bg-purple-500'
+                ? 'bg-gradient-to-r from-purple-500 to-purple-600'
                 : currentPhase === 'DAY_ANNOUNCEMENT'
-                ? 'bg-orange-500'
+                ? 'bg-gradient-to-r from-orange-500 to-orange-600'
                 : currentPhase === 'DISCUSSION'
-                ? 'bg-blue-500'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600'
                 : currentPhase === 'VOTING'
-                ? 'bg-red-500'
+                ? 'bg-gradient-to-r from-red-500 to-red-600'
                 : currentPhase === 'WIN_CHECK'
-                ? 'bg-yellow-500'
-                : 'bg-green-500'
+                ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                : 'bg-gradient-to-r from-green-500 to-green-600'
             }`}
             style={{
               width: `${progressPercentage}%`,
             }}
           />
         </div>
+      )}
+
+      {/* Phase Timeline */}
+      {currentPhase && currentPhase !== 'LOBBY' && currentPhase !== 'GAME_OVER' && (
+        <PhaseTimeline gameId={gameId} />
       )}
     </Card>
   );

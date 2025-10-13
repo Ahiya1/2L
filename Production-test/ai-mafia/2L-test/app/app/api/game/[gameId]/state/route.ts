@@ -58,12 +58,12 @@ export async function GET(
       players: game.players.map((player) => ({
         id: player.id,
         name: player.name,
+        role: player.role,
         personality: player.personality,
         isAlive: player.isAlive,
         position: player.position,
         eliminatedInRound: player.eliminatedInRound,
         eliminationType: player.eliminationType,
-        // Role intentionally NOT included (hidden until game over)
       })),
       phaseEndTime,
     };

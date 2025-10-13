@@ -244,7 +244,7 @@ async function executeNightTurn(
   );
 
   // Save to NightMessage table (private, never visible to Villagers)
-  await prisma.nightMessage.create({
+  const savedMessage = await prisma.nightMessage.create({
     data: {
       gameId,
       playerId,
@@ -266,8 +266,22 @@ async function executeNightTurn(
     cost: calculateCost(usage),
   });
 
-  // DO NOT emit night_message event to SSE (keep private from spectators)
-  nightLogger.debug({ gameId, playerId, playerName: player.name, message: text }, 'Night message generated');
+  // Emit night_message event to SSE for spectators (TRANSPARENCY MODE)
+  gameEventEmitter.emitGameEvent('night_message', {
+    gameId,
+    type: 'night_message',
+    payload: {
+      id: savedMessage.id,
+      playerId: player.id,
+      playerName: player.name,
+      message: text,
+      timestamp: savedMessage.timestamp.toISOString(),
+      roundNumber,
+      turn,
+    },
+  });
+
+  nightLogger.debug({ gameId, playerId, playerName: player.name, message: text }, 'Night message generated and emitted');
 }
 
 /**

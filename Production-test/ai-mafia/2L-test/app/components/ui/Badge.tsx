@@ -16,8 +16,8 @@ export function Badge({ variant, children, className = '' }: BadgeProps) {
   const variants = {
     alive: 'bg-green-100 text-green-800',
     dead: 'bg-red-100 text-red-800',
-    mafia: 'bg-purple-100 text-purple-800',
-    villager: 'bg-blue-100 text-blue-800',
+    mafia: 'bg-red-100 text-red-700', // Red theme for Mafia (Iteration 6)
+    villager: 'bg-blue-100 text-blue-700', // Blue theme for Villager (Iteration 6)
     phase: 'bg-yellow-100 text-yellow-800',
   };
 

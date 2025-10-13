@@ -1,0 +1,25 @@
+[
+  {
+    "testName": "Role Display",
+    "status": "PASS",
+    "details": "Roles visible: 1 Mafia indicators, 2 Villager indicators",
+    "screenshotPath": "/home/ahiya/Ahiya/2L/Production-test/ai-mafia/2L-test/app/screenshots/role-display.png"
+  },
+  {
+    "testName": "Enhanced Phase Visualization",
+    "status": "PASS",
+    "details": "Phase visualization components detected",
+    "screenshotPath": "/home/ahiya/Ahiya/2L/Production-test/ai-mafia/2L-test/app/screenshots/phase-visualization.png"
+  },
+  {
+    "testName": "Console Errors",
+    "status": "PASS",
+    "details": "No console errors detected"
+  },
+  {
+    "testName": "Mafia Chat Panel",
+    "status": "PASS",
+    "details": "Mafia chat panel visible during Night phase",
+    "screenshotPath": "/home/ahiya/Ahiya/2L/Production-test/ai-mafia/2L-test/app/screenshots/night-phase-mafia-chat.png"
+  }
+]

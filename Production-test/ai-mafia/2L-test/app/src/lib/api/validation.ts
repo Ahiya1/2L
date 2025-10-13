@@ -83,12 +83,12 @@ export type GameStateResponse = {
   players: Array<{
     id: string;
     name: string;
+    role: string;
     personality: string;
     isAlive: boolean;
     position: number;
     eliminatedInRound: number | null;
     eliminationType: string | null;
-    // Role is NOT included until game over
   }>;
   phaseEndTime: string | null;
 };

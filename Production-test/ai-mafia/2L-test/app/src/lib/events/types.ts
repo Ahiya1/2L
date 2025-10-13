@@ -24,7 +24,9 @@ export type GameEventType =
   | 'voting_complete'
   | 'player_eliminated'
   | 'round_start'
-  | 'game_over';
+  | 'game_over'
+  // Iteration 6 new events (Transparency features)
+  | 'night_message'; // Mafia coordination messages during Night phase
 
 export type GameEvent =
   // Iteration 1 events
@@ -170,5 +172,19 @@ export type GameEvent =
         winner: 'MAFIA' | 'VILLAGERS';
         finalRound: number;
         reason: string;
+      };
+    }
+  // Iteration 6 new events (Transparency features)
+  | {
+      gameId: string;
+      type: 'night_message';
+      payload: {
+        id: string;
+        playerId: string;
+        playerName: string;
+        message: string;
+        timestamp: string; // ISO 8601
+        roundNumber: number;
+        turn: number;
       };
     };

@@ -78,37 +78,71 @@ export default function VoteTally({ gameId, playerCount }: VoteTallyProps) {
   const majority = Math.ceil(playerCount / 2);
   const maxVotes = tally.length > 0 && tally[0] ? tally[0].count : 0;
 
-  // Render vote bar (visual representation)
+  // Render vote bar (visual representation with majority threshold indicator)
   const renderVoteBar = (count: number): React.ReactNode => {
     const percentage = playerCount > 0 ? (count / playerCount) * 100 : 0;
+    const majorityPercentage = playerCount > 0 ? (majority / playerCount) * 100 : 0;
     const barWidth = Math.min(percentage, 100);
 
     return (
-      <div className="w-full bg-gray-200 rounded h-2 overflow-hidden">
+      <div className="w-full relative">
+        {/* Background track */}
+        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+          <div
+            className={`h-full transition-all duration-500 ease-out ${
+              count >= majority
+                ? 'bg-gradient-to-r from-red-500 to-red-600'
+                : 'bg-gradient-to-r from-blue-500 to-blue-600'
+            }`}
+            style={{ width: `${barWidth}%` }}
+          />
+        </div>
+
+        {/* Majority threshold line */}
         <div
-          className={`h-full transition-all duration-300 ${
-            count >= majority ? 'bg-red-500' : 'bg-blue-500'
-          }`}
-          style={{ width: `${barWidth}%` }}
-        />
+          className="absolute top-0 bottom-0 w-0.5 bg-red-700 opacity-60"
+          style={{ left: `${majorityPercentage}%` }}
+          title={`Majority: ${majority} votes`}
+        >
+          <div className="absolute -top-1 -left-1 w-2 h-2 bg-red-700 rounded-full" />
+        </div>
       </div>
     );
   };
 
   return (
-    <Card className="h-fit">
+    <Card
+      className="h-fit"
+      data-testid="vote-tally"
+      role="region"
+      aria-label="Voting results"
+    >
       {/* Header */}
       <div className="text-sm text-gray-500 uppercase tracking-wide mb-3 flex items-center justify-between">
-        <span>Vote Tally</span>
+        <span className="font-semibold">🗳️ Vote Tally</span>
         <Badge variant="phase">
           {votes.length}/{playerCount} votes
         </Badge>
       </div>
 
-      {/* Threshold indicator */}
-      <div className="mb-4 p-2 bg-gray-50 rounded border border-gray-200">
-        <div className="text-xs text-gray-600">
-          <span className="font-bold">Majority threshold:</span> {majority} votes needed
+      {/* Threshold indicator with visual bar */}
+      <div className="mb-4 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-300 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs text-gray-600">
+            <span className="font-bold">Majority threshold:</span> {majority} votes
+          </div>
+          <div className="text-xs text-gray-500">
+            {maxVotes >= majority ? '✓ Reached' : `${majority - maxVotes} needed`}
+          </div>
+        </div>
+        {/* Mini progress bar toward majority */}
+        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${
+              maxVotes >= majority ? 'bg-red-500' : 'bg-blue-400'
+            }`}
+            style={{ width: `${Math.min((maxVotes / majority) * 100, 100)}%` }}
+          />
         </div>
       </div>
 
@@ -127,25 +161,28 @@ export default function VoteTally({ gameId, playerCount }: VoteTallyProps) {
             return (
               <div
                 key={entry.targetId}
-                className={`p-3 rounded border transition-all ${
+                className={`p-3 rounded-lg border-2 transition-all duration-500 shadow-sm ${
                   hasReachedMajority
-                    ? 'border-red-500 bg-red-50'
+                    ? 'border-red-500 bg-red-50 shadow-red-200'
                     : isLeader
-                    ? 'border-yellow-500 bg-yellow-50'
+                    ? 'border-yellow-500 bg-yellow-50 shadow-yellow-200'
                     : 'border-gray-300 bg-white'
                 }`}
+                data-testid="vote-entry"
+                data-target-id={entry.targetId}
+                data-vote-count={entry.count}
               >
                 {/* Player name + vote count */}
                 <div className="flex justify-between items-center mb-2">
-                  <div className="font-bold text-gray-800">
-                    {entry.targetName}
+                  <div className="font-bold text-gray-800 flex items-center gap-2">
+                    <span>{entry.targetName}</span>
                     {hasReachedMajority && (
-                      <span className="ml-2 text-red-600 text-xs">
-                        ⚠ MAJORITY REACHED
+                      <span className="text-red-600 text-xs font-semibold bg-red-100 px-2 py-0.5 rounded">
+                        ⚠ MAJORITY
                       </span>
                     )}
                     {isLeader && !hasReachedMajority && (
-                      <span className="ml-2 text-yellow-600 text-xs">
+                      <span className="text-yellow-600 text-xs font-semibold bg-yellow-100 px-2 py-0.5 rounded">
                         👑 LEADING
                       </span>
                     )}
@@ -155,7 +192,7 @@ export default function VoteTally({ gameId, playerCount }: VoteTallyProps) {
                   </Badge>
                 </div>
 
-                {/* Vote bar */}
+                {/* Vote bar with majority threshold */}
                 {renderVoteBar(entry.count)}
 
                 {/* Voter names (clickable to expand justifications) */}

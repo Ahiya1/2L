@@ -97,7 +97,7 @@ export default function PlayerGrid({ gameId }: PlayerGridProps) {
         Players ({aliveCount}/{players.length} Alive)
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2" data-testid="player-grid">
         {players
           .sort((a, b) => a.position - b.position)
           .map((player) => {
@@ -108,10 +108,13 @@ export default function PlayerGrid({ gameId }: PlayerGridProps) {
             return (
               <div
                 key={player.id}
+                data-testid={`player-card-${player.name}`}
+                data-badge={player.role === 'MAFIA' ? 'mafia' : 'villager'}
                 className={`border rounded-lg p-3 transition-all ${
-                  player.isAlive
-                    ? 'border-green-300 bg-green-50'
-                    : 'border-gray-300 bg-gray-100'
+                  // Role-based border colors (transparency feature)
+                  player.role === 'MAFIA'
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-blue-300 bg-blue-50'
                 }`}
                 style={{
                   filter: player.isAlive ? 'none' : 'grayscale(100%)',
@@ -150,9 +153,11 @@ export default function PlayerGrid({ gameId }: PlayerGridProps) {
                   )}
                 </div>
 
-                {/* Role - always hidden during game */}
-                <div className="text-xs text-gray-400 mt-1 font-mono">
-                  Role: ?
+                {/* Role badge - NOW VISIBLE (Transparency Feature) */}
+                <div className="mt-2" data-testid={`player-role-badge-${player.name}`}>
+                  <Badge variant={player.role === 'MAFIA' ? 'mafia' : 'villager'}>
+                    {player.role === 'MAFIA' ? '🔴 Mafia' : '🔵 Villager'}
+                  </Badge>
                 </div>
               </div>
             );

@@ -10,8 +10,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { gameEventEmitter } from '@/../src/lib/events/emitter';
-import type { GameEvent } from '@/../src/lib/events/types';
+import { gameEventEmitter } from '@/src/lib/events/emitter';
+import type { GameEvent } from '@/src/lib/events/types';
 
 export const dynamic = 'force-dynamic';
 

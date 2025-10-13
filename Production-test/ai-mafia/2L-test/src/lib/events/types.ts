@@ -10,7 +10,17 @@ export type GameEventType =
   | 'turn_end'
   | 'phase_change'
   | 'phase_complete'
-  | 'discussion_complete';
+  | 'discussion_complete'
+  | 'night_message'
+  | 'round_start'
+  | 'vote_cast'
+  | 'voting_complete'
+  | 'player_eliminated'
+  | 'game_over'
+  | 'nightkill'
+  | 'day_reaction'
+  | 'night_start'
+  | 'night_complete';
 
 export type GameEvent =
   | {
@@ -62,5 +72,18 @@ export type GameEvent =
         totalMessages: number;
         duration: number;
         totalCost: number;
+      };
+    }
+  | {
+      gameId: string;
+      type: 'NIGHT_MESSAGE';
+      payload: {
+        id: string;
+        playerId: string;
+        playerName: string;
+        message: string;
+        timestamp: string;
+        roundNumber: number;
+        turn: number;
       };
     };

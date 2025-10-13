@@ -41,7 +41,7 @@ export async function GET(
         }
       };
 
-      // Subscribe to all event types
+      // Subscribe to ALL event types
       gameEventEmitter.on('message', messageHandler);
       gameEventEmitter.on('turn_start', messageHandler);
       gameEventEmitter.on('turn_end', messageHandler);
@@ -49,6 +49,15 @@ export async function GET(
       gameEventEmitter.on('phase_complete', messageHandler);
       gameEventEmitter.on('discussion_complete', messageHandler);
       gameEventEmitter.on('night_message', messageHandler);
+      gameEventEmitter.on('round_start', messageHandler);
+      gameEventEmitter.on('vote_cast', messageHandler);
+      gameEventEmitter.on('voting_complete', messageHandler);
+      gameEventEmitter.on('player_eliminated', messageHandler);
+      gameEventEmitter.on('game_over', messageHandler);
+      gameEventEmitter.on('nightkill', messageHandler);
+      gameEventEmitter.on('day_reaction', messageHandler);
+      gameEventEmitter.on('night_start', messageHandler);
+      gameEventEmitter.on('night_complete', messageHandler);
 
       // 3. Keepalive heartbeat (15-second interval)
       // Prevents connection timeout, especially on proxies
@@ -71,6 +80,15 @@ export async function GET(
         gameEventEmitter.off('phase_complete', messageHandler);
         gameEventEmitter.off('discussion_complete', messageHandler);
         gameEventEmitter.off('night_message', messageHandler);
+        gameEventEmitter.off('round_start', messageHandler);
+        gameEventEmitter.off('vote_cast', messageHandler);
+        gameEventEmitter.off('voting_complete', messageHandler);
+        gameEventEmitter.off('player_eliminated', messageHandler);
+        gameEventEmitter.off('game_over', messageHandler);
+        gameEventEmitter.off('nightkill', messageHandler);
+        gameEventEmitter.off('day_reaction', messageHandler);
+        gameEventEmitter.off('night_start', messageHandler);
+        gameEventEmitter.off('night_complete', messageHandler);
 
         try {
           controller.close();

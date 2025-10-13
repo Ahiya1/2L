@@ -60,6 +60,8 @@ export type GameEvent =
         from: string;
         to: string;
         round?: number;
+        phaseStartTime?: string; // ISO 8601 timestamp
+        phaseEndTime?: string | null; // ISO 8601 timestamp or null for phases with no duration
       };
     }
   | {

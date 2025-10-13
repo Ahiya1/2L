@@ -218,8 +218,11 @@ export async function runGameLoop(
           throw new Error(`Unknown phase: ${currentPhase}`);
       }
 
-      // Emit phase transition event
+      // Emit phase transition event with timing information
       const previousPhase = getPreviousPhase(currentPhase);
+      const phaseStartTime = new Date();
+      const phaseEndTime = calculatePhaseEndTimeFromPhase(currentPhase);
+
       gameEventEmitter.emitGameEvent('phase_change', {
         gameId,
         type: 'phase_change',
@@ -227,6 +230,8 @@ export async function runGameLoop(
           from: previousPhase,
           to: currentPhase,
           round: roundNumber,
+          phaseStartTime: phaseStartTime.toISOString(),
+          phaseEndTime: phaseEndTime ? phaseEndTime.toISOString() : null,
         },
       });
 
@@ -441,6 +446,25 @@ function getPreviousPhase(current: GamePhase): GamePhase | 'LOBBY' {
     return prev || 'LOBBY';
   }
   return 'LOBBY';
+}
+
+/**
+ * Calculate phase end time based on phase duration
+ */
+function calculatePhaseEndTimeFromPhase(phase: GamePhase): Date | null {
+  const durations: Record<GamePhase, number> = {
+    NIGHT: 45,
+    DAY_ANNOUNCEMENT: 10,
+    DISCUSSION: 180,
+    VOTING: 120,
+    WIN_CHECK: 5,
+    GAME_OVER: 0,
+  };
+
+  const durationSeconds = durations[phase];
+  if (durationSeconds === 0) return null;
+
+  return new Date(Date.now() + durationSeconds * 1000);
 }
 
 /**

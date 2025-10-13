@@ -1,0 +1,460 @@
+plan_id: plan-2
+created_at: "2025-10-13T14:45:00Z"
+status: PLANNED
+total_iterations: 3
+
+strategy: |
+  ## Master Strategy for Plan 2: AI Mafia - Full Transparency Frontend & Critical Fixes
+
+  ### Strategic Overview
+
+  All 3 master explorers (Architecture, Testing, Transparency) unanimously recommend a **3-iteration approach**:
+
+  1. **Iteration 1: Critical Fixes** - Stabilize the foundation (logging, SSE, timer sync)
+  2. **Iteration 2: Transparency Features** - Add spectator value (roles, Mafia chat, enhanced UI)
+  3. **Iteration 3: E2E Testing & Polish** - Validate everything works, prevent regressions
+
+  ### Key Insights from Master Exploration
+
+  **Root Cause Identified (Explorer 1 & 2):**
+  - Pino logging with pino-pretty transport causes worker thread crashes
+  - This breaks SSE connections → no real-time updates → messages don't appear
+  - Fix: Replace pino-pretty transport with console.log or basic Pino (1-2 hours)
+
+  **Critical Path (All Explorers):**
+  ```
+  Fix Logging → Stabilize SSE → Sync Timer → Verify Messages → Add Transparency → E2E Tests
+  ```
+
+  **Backend is Stable (Explorer 2):**
+  - Iteration 4 validated backend: 44 messages generated, 47 tests passing
+  - Zero backend changes needed for Plan 2
+  - Constraint: Must not break Iteration 4 code
+
+  **Data Model is Complete (Explorer 3):**
+  - NightMessage table exists for Mafia chat
+  - Player.role field exists for role display
+  - Only need new API endpoint: `/api/game/[gameId]/night-messages`
+
+  ### Complexity Assessment
+
+  - **Explorer 1:** MEDIUM (tactical fixes, no refactoring)
+  - **Explorer 2:** COMPLEX (15+ features, dependencies, testing infrastructure)
+  - **Explorer 3:** COMPLEX (frontend-heavy, real-time integration)
+  - **Consensus:** HIGH complexity (25-35 hours) but manageable with proper iteration breakdown
+
+  ### Risk Mitigation
+
+  **High Risks:**
+  1. Logging changes breaking backend (47 tests must keep passing) → Solution: Minimal config change
+  2. SSE debugging complexity (multiple failure modes) → Solution: Test manually before E2E tests
+  3. Playwright test flakiness (11 tests, real-time updates) → Solution: Start with 3-5 fast tests
+
+  **Dependencies:**
+  - Iteration 2 depends on Iteration 1 (SSE must work for transparency features)
+  - Iteration 3 depends on Iteration 1+2 (tests validate stable system)
+
+  ### Success Criteria
+
+  **Iteration 1 Success:**
+  - [ ] Zero "worker has exited" errors in logs
+  - [ ] SSE connection stable for 10+ minutes
+  - [ ] Timer syncs with server (±2 seconds)
+  - [ ] 44/44 messages appear in discussion feed
+  - [ ] All 47 backend tests still passing
+
+  **Iteration 2 Success:**
+  - [ ] Player roles visible from game start (red/blue badges)
+  - [ ] Mafia chat panel displays during Night phase
+  - [ ] Enhanced phase visualization (timeline, icons)
+  - [ ] Vote visualization updates in real-time
+
+  **Iteration 3 Success:**
+  - [ ] 11 Playwright E2E tests written and passing
+  - [ ] Tests run in CI/CD pipeline
+  - [ ] Visual regression tests capture screenshots
+  - [ ] All tests stable (no flakiness)
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 5
+    name: "Critical Fixes - Logging, SSE, Timer Sync"
+    vision: "Fix the foundation: stabilize logging to restore SSE connections, sync timer with server, verify all 44 messages appear"
+    scope: |
+      ## Iteration 1: Critical Fixes (12-16 hours)
+
+      ### Mission
+      Restore real-time updates by fixing logging crashes, stabilizing SSE, and syncing timer with server state.
+
+      ### Features to Implement
+
+      #### 1. Fix Pino Logging System (2-3 hours)
+      - **Goal:** Stop worker thread crashes that break SSE
+      - **Approach:** Replace pino-pretty transport with basic Pino or console.log
+      - **Files to modify:**
+        - `src/lib/logger.ts` - Remove pino-pretty transport
+      - **Acceptance criteria:**
+        - [ ] Zero "worker has exited" errors during 10-minute game
+        - [ ] All 47 backend tests still passing (run `npm test`)
+        - [ ] Logs are readable and structured
+      - **Risk:** LOW (minimal change, preserves Iteration 4 work)
+
+      #### 2. Fix Server-Sent Events (SSE) (4-6 hours)
+      - **Goal:** Restore real-time updates for phases, messages, votes
+      - **Approach:** Verify SSE endpoint works after logging fix, debug event emission if needed
+      - **Files to investigate:**
+        - `app/api/game/[gameId]/stream/route.ts` - SSE endpoint
+        - `src/lib/events/emitter.ts` - Event emitter singleton
+        - `contexts/GameEventsContext.tsx` - Frontend SSE client
+      - **Acceptance criteria:**
+        - [ ] SSE connection status shows "Connected" (green)
+        - [ ] Messages appear in discussion feed immediately when generated
+        - [ ] Phase changes trigger UI updates automatically
+        - [ ] Vote tallies update in real-time during voting phase
+        - [ ] Reconnection works if connection drops
+      - **Risk:** MEDIUM (root cause unclear - could be logging, EventEmitter, or streaming)
+
+      #### 3. Fix Timer Synchronization (2-3 hours)
+      - **Goal:** Phase timers should sync with server state, not reset on refresh
+      - **Approach:** Propagate `phaseStartTime` from backend in phase_change events
+      - **Files to modify:**
+        - Backend event emission (where phase_change events are emitted)
+        - `contexts/GameEventsContext.tsx` - Capture phaseStartTime from events
+        - `components/game/PhaseIndicator.tsx` - Use server phaseStartTime (currently line 61 uses `new Date()`)
+      - **Acceptance criteria:**
+        - [ ] Timer displays time remaining from server-side phase end time
+        - [ ] Refreshing page shows same time remaining (syncs with server)
+        - [ ] Timer countdown is smooth (1-second intervals)
+      - **Risk:** LOW (straightforward fix)
+
+      #### 4. Verify Message Display (1-2 hours)
+      - **Goal:** Discussion feed should show all generated messages
+      - **Approach:** Once SSE is stable, verify DiscussionFeed component receives all message events
+      - **Files to test:**
+        - `components/game/DiscussionFeed.tsx` - Message display component
+        - Backend: Verify all 44 messages are emitted via gameEventEmitter
+      - **Acceptance criteria:**
+        - [ ] All 40+ messages appear in feed during discussion phase
+        - [ ] Messages show speaker name, message text, timestamp
+        - [ ] Messages are properly ordered (chronological)
+        - [ ] Auto-scroll to new messages works
+      - **Risk:** LOW (symptom of SSE being broken, not a root issue)
+
+      #### 5. Fix API Endpoints (2-3 hours)
+      - **Goal:** Ensure all API routes work without errors
+      - **Approach:** Test each endpoint manually and via automated tests
+      - **Files to verify:**
+        - `app/api/game/create/route.ts`
+        - `app/api/game/[gameId]/start/route.ts`
+        - `app/api/game/[gameId]/state/route.ts`
+        - `app/api/game/[gameId]/messages/route.ts`
+        - `app/api/game/[gameId]/votes/route.ts`
+      - **Acceptance criteria:**
+        - [ ] No 500 errors in any endpoint
+        - [ ] All endpoints return correct data structure
+        - [ ] Error handling works (404 for missing game, etc.)
+      - **Risk:** LOW (likely already working from Iteration 4)
+
+      ### Testing Strategy
+      - Manual testing: Create game, start game, watch for SSE connection, verify messages
+      - Backend tests: `npm test` (47 tests must keep passing)
+      - Visual inspection: Check browser DevTools Network tab for SSE connection
+      - Log inspection: Watch server logs for "worker has exited" errors
+
+      ### Success Criteria for Iteration 1
+      1. **Real-time Updates Work Flawlessly**
+         - Metric: SSE connection stays alive for full 10-minute game
+         - Target: 100% uptime, no reconnections needed
+
+      2. **All Messages Display Correctly**
+         - Metric: Message count in UI matches database count
+         - Target: 100% of messages appear in feed
+         - Validation: Game generates 44 messages, UI shows all 44
+
+      3. **Timer Syncs with Server**
+         - Metric: Time remaining matches server calculation (±2 seconds)
+         - Target: Timer never resets on refresh
+         - Validation: Refresh page 10 times during game, timer stays consistent
+
+      4. **No Server Crashes**
+         - Metric: Zero uncaught exceptions during game
+         - Target: Server runs full game without crashes
+         - Validation: Run 3 consecutive games, no crashes
+
+      5. **Backend Stability Preserved**
+         - Metric: All 47 backend tests passing
+         - Target: 100% pass rate
+         - Validation: `npm test` exits with code 0
+
+      ### Out of Scope for Iteration 1
+      - Transparency features (roles, Mafia chat) - Iteration 2
+      - Playwright E2E tests - Iteration 3
+      - Enhanced phase visualization - Iteration 2
+      - Vote visualization enhancements - Iteration 2
+    status: PENDING
+    dependencies: []
+
+  - iteration_id: 2
+    global_iteration: 6
+    name: "Transparency Features - Roles, Mafia Chat, Enhanced UI"
+    vision: "Add spectator value: display player roles from start, show Mafia private chat, enhance phase visualization, add vote insights"
+    scope: |
+      ## Iteration 2: Transparency Features (10-12 hours)
+
+      ### Mission
+      Make AI Mafia game fully transparent for spectators by revealing roles, showing Mafia coordination, and enhancing game phase/vote visualizations.
+
+      ### Prerequisites
+      - Iteration 1 complete: SSE working, timer synced, messages appearing
+
+      ### Features to Implement
+
+      #### 6. Display Player Roles from Start (2-3 hours)
+      - **Goal:** Show each player's role (Mafia/Villager) from the beginning
+      - **Approach:** Add role badges to PlayerGrid component, update GameEventsContext to include roles
+      - **Files to modify:**
+        - `components/game/PlayerGrid.tsx` - Add role badges (red "Mafia" badge, blue "Villager" badge)
+        - Backend: Verify role data included in game state API response
+      - **Acceptance criteria:**
+        - [ ] Player grid shows role badges (red "Mafia" badge, blue "Villager" badge)
+        - [ ] Roles visible immediately when game starts
+        - [ ] Role assignment shown in game start announcement
+        - [ ] Player cards color-coded (red border for Mafia, blue for Villager)
+      - **Risk:** LOW (data exists, just UI changes)
+
+      #### 7. Show Mafia Private Night Chat (4-5 hours)
+      - **Goal:** Display Mafia coordination during Night phase to spectators
+      - **Approach:** Create new MafiaChatPanel component, add API endpoint for night messages, emit night message events via SSE
+      - **Files to create/modify:**
+        - **New API endpoint:** `app/api/game/[gameId]/night-messages/route.ts` - Fetch NightMessages for live game
+        - **New component:** `components/game/MafiaChatPanel.tsx` - Displays Mafia private chat
+        - **Backend event emission:** Emit 'night_message' events via gameEventEmitter during Night phase
+        - **Layout:** `app/game/[gameId]/page.tsx` - Add split screen layout (discussion feed left, Mafia chat right during Night)
+      - **Acceptance criteria:**
+        - [ ] "Mafia Chat" panel visible during Night phase
+        - [ ] Shows Mafia agents' private discussion messages
+        - [ ] Updates in real-time as Mafia agents strategize
+        - [ ] Shows final kill target decision
+        - [ ] Panel hidden/collapsed during Day phases (or grayed out with "No Mafia activity")
+      - **Risk:** MEDIUM (requires new backend event emission for night messages)
+      - **Design decision:** Split screen layout (recommended by Explorer 3)
+
+      #### 8. Enhanced Phase Visualization (2-3 hours)
+      - **Goal:** Better visual indicators for game phases and transitions
+      - **Approach:** Enhance PhaseIndicator component with better icons, colors, animations
+      - **Files to modify:**
+        - `components/game/PhaseIndicator.tsx` - Add phase icons/colors, visual timeline
+        - Potentially create new `components/game/PhaseTimeline.tsx` for timeline visualization
+      - **Acceptance criteria:**
+        - [ ] Large phase banner at top showing current phase
+        - [ ] Visual timeline showing phase progression (Night → Day → Discussion → Voting)
+        - [ ] Phase transitions have smooth animations
+        - [ ] Round number prominently displayed
+        - [ ] Phase icons/colors (Night=moon, Day=sun, Discussion=chat, Voting=ballot)
+      - **Risk:** LOW (mostly CSS/styling changes)
+
+      #### 9. Role-Colored Player Cards (1-2 hours)
+      - **Goal:** Visual distinction between Mafia and Villagers in player grid
+      - **Approach:** Update PlayerGrid styling based on role
+      - **Files to modify:**
+        - `components/game/PlayerGrid.tsx` - Add role-based styling
+      - **Acceptance criteria:**
+        - [ ] Mafia player cards have red border/background
+        - [ ] Villager player cards have blue border/background
+        - [ ] Dead players are grayed out but role color still visible
+        - [ ] Personality traits shown on hover/click (if exists)
+      - **Risk:** LOW (styling changes only)
+
+      #### 10. Enhanced Vote Visualization (2-3 hours)
+      - **Goal:** Better display of voting patterns and results
+      - **Approach:** Enhance VoteTally component with real-time updates, vote history, majority indicators
+      - **Files to modify:**
+        - `components/game/VoteTally.tsx` - Enhanced vote visualization
+        - Potentially create `components/game/VoteHistory.tsx` for historical vote tracking
+      - **Acceptance criteria:**
+        - [ ] Vote tally shows votes in real-time as agents vote
+        - [ ] Visual indicators for majority threshold (e.g., "5 votes needed")
+        - [ ] Vote history panel showing all previous rounds' votes (optional, if time)
+        - [ ] Vote justifications inline with vote counts
+      - **Risk:** LOW (enhancement to existing component)
+
+      ### Testing Strategy
+      - Manual testing: Play full game, verify all transparency features visible
+      - Visual inspection: Check role badges, Mafia chat panel, phase visualization
+      - SSE verification: Confirm night_message events are emitted and received
+      - Cross-browser testing: Test in Chrome, Firefox (if time)
+
+      ### Success Criteria for Iteration 2
+      1. **Transparency Features Visible**
+         - Metric: Roles visible, Mafia chat visible during Night phase
+         - Target: All spectators can see full game state
+         - Validation: Manual inspection of 3 games
+
+      2. **Mafia Chat Updates in Real-Time**
+         - Metric: Night messages appear immediately when generated
+         - Target: Zero delay (SSE delivers events instantly)
+         - Validation: Watch Night phase, verify messages appear live
+
+      3. **Enhanced UI Improves UX**
+         - Metric: Phase visualization clear, vote tally informative
+         - Target: Subjective assessment (easy to follow game flow)
+         - Validation: User feedback (developer as spectator)
+
+      ### Out of Scope for Iteration 2
+      - Playwright E2E tests - Iteration 3
+      - Vote history panel (complex) - Can be added later if time
+      - Mobile responsive design - Desktop-first
+      - Accusation network graph - Post-MVP
+    status: PENDING
+    dependencies:
+      - iteration_id: 1
+        reason: "SSE must be stable for real-time transparency features"
+
+  - iteration_id: 3
+    global_iteration: 7
+    name: "E2E Testing & Polish - Playwright Tests, Visual Regression"
+    vision: "Validate everything works: write comprehensive Playwright E2E tests, add visual regression testing, ensure CI/CD pipeline ready"
+    scope: |
+      ## Iteration 3: E2E Testing & Polish (10-12 hours)
+
+      ### Mission
+      Validate all features work correctly via automated Playwright E2E tests, prevent regressions with visual testing, ensure production readiness.
+
+      ### Prerequisites
+      - Iteration 1 complete: SSE working, timer synced, messages appearing
+      - Iteration 2 complete: Transparency features implemented
+
+      ### Features to Implement
+
+      #### 11. Playwright End-to-End Tests (8-10 hours)
+      - **Goal:** Automated tests using Playwright MCP to validate frontend functionality
+      - **Approach:** Write 11 test scenarios (8 fast tests, 3 slow tests) covering critical paths
+      - **Files to create:**
+        - `tests/e2e/lobby.spec.ts` - Lobby loads and game creation
+        - `tests/e2e/game-page.spec.ts` - Game page loads, player grid displays
+        - `tests/e2e/sse-connection.spec.ts` - SSE connection status indicator
+        - `tests/e2e/messages.spec.ts` - Messages appear in discussion feed
+        - `tests/e2e/phase-changes.spec.ts` - Phase changes reflected in UI
+        - `tests/e2e/timer.spec.ts` - Timer countdown works correctly
+        - `tests/e2e/votes.spec.ts` - Vote tally displays correctly
+        - `tests/e2e/roles.spec.ts` - Player roles visible from start
+        - `tests/e2e/mafia-chat.spec.ts` - Mafia chat panel displays during Night phase
+        - `tests/e2e/full-game.spec.ts` - Full game flow from start to finish (SLOW)
+        - `tests/e2e/game-over.spec.ts` - Game over screen shows final results
+      - **Test infrastructure:**
+        - `playwright.config.ts` - Playwright configuration
+        - `tests/helpers/game-helpers.ts` - Helper functions for game creation, waiting for phases
+        - Use Playwright MCP for browser automation
+      - **Acceptance criteria:**
+        - [ ] All 11 tests written and documented
+        - [ ] 8 fast tests complete in <30 minutes total
+        - [ ] 3 slow tests complete in <60 minutes total
+        - [ ] All tests pass on localhost dev server
+        - [ ] Tests use proper waits (no brittle timeouts)
+        - [ ] CI/CD pipeline configured (GitHub Actions or similar)
+      - **Risk:** MEDIUM (test flakiness with real-time updates, timing issues)
+
+      #### 12. Visual Regression Testing (2-3 hours)
+      - **Goal:** Screenshot-based tests to catch UI layout issues
+      - **Approach:** Use Playwright's screenshot API to capture key screens, store in repo
+      - **Files to create:**
+        - `tests/visual/lobby.spec.ts` - Lobby screenshot
+        - `tests/visual/game-phases.spec.ts` - Screenshots for each phase (Night, Day, Discussion, Voting)
+        - `tests/visual/game-over.spec.ts` - Game over screen screenshot
+      - **Acceptance criteria:**
+        - [ ] Playwright screenshots of lobby, game page, results page
+        - [ ] Screenshots stored in `tests/visual/screenshots/` directory
+        - [ ] Visual diff detection configured (optional, if time)
+      - **Risk:** LOW (nice-to-have, not critical)
+
+      ### Testing Strategy
+      - **Fast tests (8 scenarios):** Run in parallel, target <5 min each
+        1. Lobby loads
+        2. Game creation works
+        3. Game page renders player grid
+        4. SSE connection status indicator
+        5. Messages appear (short game with 5 messages)
+        6. Phase changes reflected
+        7. Timer countdown works
+        8. Roles visible from start
+
+      - **Slow tests (3 scenarios):** Run sequentially, target <30 min total
+        1. Full game flow (10-minute game, all phases, 44 messages)
+        2. Game over screen validation
+        3. Mafia chat panel validation (requires Night phase)
+
+      - **CI/CD Integration:**
+        - GitHub Actions workflow: `npm run test:e2e` on push to main
+        - Test report generation (Playwright HTML report)
+        - Screenshot artifacts uploaded on failure
+
+      ### Success Criteria for Iteration 3
+      1. **Playwright Tests Pass**
+         - Metric: All E2E tests pass on localhost
+         - Target: 100% pass rate
+         - Validation: `npm run test:e2e` exits with code 0
+
+      2. **Test Coverage Comprehensive**
+         - Metric: All critical paths covered (lobby → game → messages → phases → votes → results)
+         - Target: 11 test scenarios implemented
+         - Validation: Test report shows 11 passing tests
+
+      3. **Tests Are Stable**
+         - Metric: No flaky tests (tests pass consistently)
+         - Target: 3 consecutive runs, all tests pass
+         - Validation: Run test suite 3 times, zero failures
+
+      4. **CI/CD Pipeline Ready**
+         - Metric: Tests run in GitHub Actions
+         - Target: Workflow configured and passing
+         - Validation: GitHub Actions shows green checkmark
+
+      5. **Visual Regression Tests Capture Screenshots**
+         - Metric: Screenshots exist for key screens
+         - Target: 5+ screenshots stored
+         - Validation: Check `tests/visual/screenshots/` directory
+
+      ### Out of Scope for Iteration 3
+      - Load testing - Not needed for local dev
+      - Security testing - Post-MVP
+      - Mobile testing - Desktop-first
+      - Cross-browser testing (beyond Chrome) - Can add Firefox/Safari later
+    status: PENDING
+    dependencies:
+      - iteration_id: 1
+        reason: "Tests validate stable SSE and timer sync from Iteration 1"
+      - iteration_id: 2
+        reason: "Tests validate transparency features from Iteration 2"
+
+---
+
+## Master Plan Summary
+
+**Total Iterations:** 3
+**Estimated Time:** 32-40 hours
+- Iteration 1: 12-16 hours
+- Iteration 2: 10-12 hours
+- Iteration 3: 10-12 hours
+
+**Global Iteration Range:** 5-7
+
+**Critical Success Factors:**
+1. Fix Pino logging without breaking backend (Iteration 1)
+2. Stabilize SSE before adding transparency features (Iteration 1 → 2)
+3. Write stable, non-flaky Playwright tests (Iteration 3)
+
+**Risk Mitigation:**
+- Minimal logging change preserves Iteration 4 backend
+- Manual SSE testing before E2E tests reduces test flakiness
+- Incremental approach allows early validation of fixes
+
+**Dependencies:**
+- Iteration 2 depends on Iteration 1 (SSE stability)
+- Iteration 3 depends on Iteration 1+2 (stable features to test)
+
+**Out of Scope:**
+- Backend changes (zero needed)
+- Database schema changes (zero needed)
+- Mobile responsive design
+- Deployment to production
+- Advanced analytics/visualizations

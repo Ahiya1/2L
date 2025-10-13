@@ -241,6 +241,9 @@ function stateToEvents(state: any): GameEvent[] {
         from: 'LOBBY',
         to: state.game.currentPhase,
         round: state.game.roundNumber,
+        // Include phaseStartTime if available from state
+        phaseStartTime: state.game.phaseStartTime || new Date().toISOString(),
+        phaseEndTime: state.game.phaseEndTime || null,
       },
     });
   }

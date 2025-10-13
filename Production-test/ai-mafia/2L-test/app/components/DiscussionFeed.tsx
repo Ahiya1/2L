@@ -77,6 +77,13 @@ export default function DiscussionFeed({ gameId, playerNames = [] }: DiscussionF
     }));
 
     setMessages(extractedMessages);
+
+    // Debug logging for message count verification (TEMPORARY - remove after testing)
+    console.log('[MESSAGE DEBUG] Total message events:', messageEvents.length);
+    if (messageEvents.length > 0) {
+      const latestMessage = messageEvents[messageEvents.length - 1];
+      console.log('[MESSAGE DEBUG] Latest message:', latestMessage?.payload?.message);
+    }
   }, [events]);
 
   // Auto-scroll to bottom when new messages arrive (only if autoScroll enabled)

@@ -1,19 +1,13 @@
 import pino from 'pino';
 
 // Environment-aware Pino logger configuration
+// Transport removed to eliminate worker thread crashes
+// Use: npm run dev | pino-pretty for human-readable logs
 export const logger = pino({
   level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
   formatters: {
     level: (label) => ({ level: label }),
   },
-  transport: process.env.NODE_ENV === 'development' ? {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss',
-      ignore: 'pid,hostname',
-    },
-  } : undefined,
 });
 
 // Create child loggers for different modules

@@ -50,15 +50,16 @@ export default function PhaseIndicator({ gameId }: PhaseIndicatorProps) {
     return (latestPhase.payload as any).round || 1;
   }, [events]);
 
-  // Extract phase start time from events
+  // Extract phase start time from events (server-authoritative)
   const phaseStartTime = useMemo<Date | null>(() => {
     const phaseEvents = events.filter((e) => e.type === 'phase_change');
     if (phaseEvents.length === 0) return null;
-    const latestPhase = phaseEvents[phaseEvents.length - 1];
 
-    // In real implementation, this would come from the phase_change event payload
-    // For now, use current time as approximation
-    return new Date();
+    const latestPhase = phaseEvents[phaseEvents.length - 1];
+    if (!latestPhase?.payload?.phaseStartTime) return null;
+
+    // Use server-provided phaseStartTime (ISO 8601 string)
+    return new Date(latestPhase.payload.phaseStartTime);
   }, [events]);
 
   // Calculate phase end time
@@ -78,6 +79,16 @@ export default function PhaseIndicator({ gameId }: PhaseIndicatorProps) {
 
     return () => clearInterval(interval);
   }, [phaseEndTime]);
+
+  // Debug logging for timer sync verification (TEMPORARY - remove after testing)
+  useEffect(() => {
+    if (phaseStartTime && currentPhase) {
+      console.log('[TIMER DEBUG] Phase:', currentPhase);
+      console.log('[TIMER DEBUG] phaseStartTime:', phaseStartTime.toISOString());
+      console.log('[TIMER DEBUG] phaseEndTime:', phaseEndTime?.toISOString());
+      console.log('[TIMER DEBUG] timeRemaining:', timeRemaining, 'seconds');
+    }
+  }, [phaseStartTime, phaseEndTime, timeRemaining, currentPhase]);
 
   // Get phase configuration
   const phaseConfig = getPhaseConfig(currentPhase);

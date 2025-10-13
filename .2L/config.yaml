@@ -5,7 +5,7 @@
 current_plan: plan-4
 
 # Global iteration counter (across all plans)
-global_iteration_counter: 4
+global_iteration_counter: 5
 
 # Current phase (for resumability)
 current_phase: exploration
@@ -54,4 +54,4 @@ plans:
       - 5
 
 # Next available iteration number
-next_iteration_number: 4
+next_iteration_number: 5

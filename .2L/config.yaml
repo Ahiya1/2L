@@ -41,8 +41,9 @@ plans:
       - 2
   - plan_id: plan-4
     name: "2L Agent SDK Knowledge Integration"
-    status: PLANNED
+    status: COMPLETE
     created_at: "2025-10-13T00:00:00Z"
+    completed_at: "2025-10-13T15:37:00Z"
     vision_file: .2L/plan-4/vision.md
     master_plan_file: .2L/plan-4/master-plan.yaml
     master_exploration:

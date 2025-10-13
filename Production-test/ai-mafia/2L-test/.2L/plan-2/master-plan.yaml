@@ -1,6 +1,7 @@
 plan_id: plan-2
 created_at: "2025-10-13T14:45:00Z"
-status: PLANNED
+status: COMPLETE
+completed_at: "2025-10-13T18:30:00Z"
 total_iterations: 3
 
 strategy: |
@@ -202,6 +203,11 @@ iterations:
     global_iteration: 6
     name: "Transparency Features - Roles, Mafia Chat, Enhanced UI"
     vision: "Add spectator value: display player roles from start, show Mafia private chat, enhance phase visualization, add vote insights"
+    status: COMPLETE
+    completed_at: "2025-10-13T17:15:00Z"
+    commit_hash: "6b56b28"
+    commit_tag: "2l-plan-2-iter-6"
+    validation_status: "PASS (92% confidence via Playwright MCP)"
     scope: |
       ## Iteration 2: Transparency Features (10-12 hours)
 
@@ -309,7 +315,6 @@ iterations:
       - Vote history panel (complex) - Can be added later if time
       - Mobile responsive design - Desktop-first
       - Accusation network graph - Post-MVP
-    status: PENDING
     dependencies:
       - iteration_id: 1
         reason: "SSE must be stable for real-time transparency features"
@@ -318,6 +323,11 @@ iterations:
     global_iteration: 7
     name: "E2E Testing & Polish - Playwright Tests, Visual Regression"
     vision: "Validate everything works: write comprehensive Playwright E2E tests, add visual regression testing, ensure CI/CD pipeline ready"
+    status: COMPLETE
+    completed_at: "2025-10-13T18:30:00Z"
+    commit_hash: "4538cef"
+    commit_tag: "2l-plan-2-iter-7"
+    validation_status: "PASS (85% confidence - test infrastructure validated)"
     scope: |
       ## Iteration 3: E2E Testing & Polish (10-12 hours)
 

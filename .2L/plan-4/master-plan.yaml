@@ -1,0 +1,208 @@
+plan_id: plan-4
+created_at: 2025-10-13T00:00:00Z
+status: PLANNED
+total_iterations: 3
+
+strategy: |
+  Three-iteration approach to integrate Claude Agent SDK documentation into 2L's local knowledge base:
+
+  1. Foundation + TypeScript Complete (Iteration 1)
+     - Establish documentation infrastructure at ~/.claude/docs/agent-sdk/
+     - Complete TypeScript SDK documentation (6 guides + 5 examples)
+     - All cross-language conceptual guides (6 files)
+     - Initial agent discovery integration (2l-explorer.md)
+     - Delivers standalone value: TypeScript-only is immediately useful
+
+  2. Python Implementation Coverage (Iteration 2)
+     - Mirror TypeScript structure with Python SDK documentation
+     - Achieve feature parity between TS and Python
+     - Add Python examples (5 implementations)
+     - Extend agent integration (2l-planner.md)
+
+  3. Integration & Validation (Iteration 3)
+     - Complete agent system integration (2l-builder.md)
+     - Add metadata and navigation aids to all 35+ files
+     - End-to-end testing with real visions
+     - Validate agent discovery mechanism
+
+  Key principles:
+  - Web harvesting quality is critical (foundation for everything)
+  - Test documentation usability early (Read/Grep effectiveness)
+  - Keep agent prompts minimal (<150 tokens total)
+  - Each iteration delivers standalone value
+  - Design for future maintainability from the start
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 3
+    name: "Foundation + TypeScript Complete"
+    vision: "Establish documentation infrastructure with complete TypeScript SDK coverage and core examples"
+    scope: |
+      Documentation infrastructure + TypeScript complete
+
+      Deliverables:
+      1. Web Documentation Harvest
+         - Systematic fetch from https://docs.claude.com/en/api/agent-sdk/
+         - Extract ALL TypeScript and Python SDK pages
+         - Capture code examples verbatim
+         - Extract troubleshooting sections completely
+         - Time: 2-3 hours
+
+      2. Documentation Directory Structure
+         - Create ~/.claude/docs/agent-sdk/ directory
+         - Write overview.md (what Agent SDK is, when to use, core concepts)
+         - Write quickstart.md (installation, first agent, basic patterns)
+         - Create troubleshooting.md (common errors + solutions)
+
+      3. TypeScript Implementation Guides (typescript/ directory)
+         - setup.md (installation, tsconfig, dependencies)
+         - query-pattern.md (stateless query() usage)
+         - client-pattern.md (stateful ClaudeSDKClient with conversations)
+         - custom-tools.md (tool creation with Zod schemas)
+         - options.md (complete Options interface)
+         - streaming.md (async iterables, message streaming)
+
+      4. Conceptual Guides (concepts/ directory - cross-language)
+         - permissions.md (all permission modes, when to use each)
+         - mcp.md (Model Context Protocol integration)
+         - hooks.md (event handling, pre/post tool use)
+         - tools.md (built-in tools overview, custom tool patterns)
+         - sessions.md (state management, conversation continuity)
+         - cost-tracking.md (token usage monitoring)
+
+      5. Working Examples (examples/ directory - TypeScript versions)
+         - simple-cli-agent.md
+         - web-api-agent.md
+         - stateful-chatbot.md
+         - multi-tool-agent.md
+         - mcp-server-agent.md
+
+      6. Agent Discovery Integration
+         - Update 2l-explorer.md prompt (<50 tokens)
+         - Add reference to ~/.claude/docs/agent-sdk/overview.md
+
+      Files created: 20-22 markdown files
+      Files modified: 1 agent prompt (2l-explorer.md)
+
+      Success criteria:
+      - All TypeScript SDK features documented
+      - All concept files complete (cross-language)
+      - 5+ working TypeScript examples with full code
+      - overview.md and quickstart.md provide clear entry points
+      - troubleshooting.md covers common errors
+      - 2l-explorer.md references docs location
+      - Code examples are syntactically valid
+      - Cross-references work correctly
+
+      Estimated duration: 9-11 hours
+      Risk level: HIGH (incomplete harvest, structure doesn't work for agents)
+    status: PENDING
+    dependencies: []
+
+  - iteration_id: 2
+    global_iteration: 4
+    name: "Python Implementation Coverage"
+    vision: "Achieve feature parity with Python SDK documentation and examples"
+    scope: |
+      Python SDK complete
+
+      Deliverables:
+      1. Python Implementation Guides (python/ directory)
+         - setup.md (virtual env, requirements.txt)
+         - query-pattern.md (stateless query() with async/await)
+         - client-pattern.md (stateful ClaudeSDKClient)
+         - custom-tools.md (@tool decorator, type hints)
+         - options.md (ClaudeAgentOptions reference)
+         - async-patterns.md (async iteration, message handling)
+
+      2. Python Working Examples (extend examples/ directory)
+         - Add Python implementations to all 5 example files
+         - simple-cli-agent.md (add Python section)
+         - web-api-agent.md (add Python section)
+         - stateful-chatbot.md (add Python section)
+         - multi-tool-agent.md (add Python section)
+         - mcp-server-agent.md (add Python section)
+
+      3. Feature Parity Validation
+         - Compare TypeScript vs Python documentation
+         - Document any gaps or SDK differences
+         - Ensure examples demonstrate same capabilities
+
+      4. Agent Integration Extension
+         - Update 2l-planner.md prompt (<50 tokens)
+         - Add reference to language-specific guides
+
+      Files created: 6 Python guide files
+      Files modified: 11 files (5 example files + 1 overview.md + 1 agent prompt)
+
+      Success criteria:
+      - All Python SDK features documented
+      - Python guides mirror TypeScript structure
+      - All 5 examples have Python implementations
+      - Feature parity validated and gaps documented
+      - 2l-planner.md references docs appropriately
+      - Python examples are syntactically valid
+
+      Estimated duration: 7-9 hours
+      Risk level: MEDIUM (feature parity gaps, Python-specific edge cases)
+    status: PENDING
+    dependencies: [1]
+
+  - iteration_id: 3
+    global_iteration: 5
+    name: "Integration & Validation"
+    vision: "Complete agent system integration and validate end-to-end workflows"
+    scope: |
+      Agent integration complete + metadata + validation
+
+      Deliverables:
+      1. Agent Integration Complete
+         - Update 2l-builder.md prompt (<50 tokens)
+         - Add reference to implementation guides
+         - Total prompt additions: <150 tokens across all 3 agents
+
+      2. Metadata Enrichment (all 35+ files)
+         - Add "Last updated" timestamps
+         - Add SDK version compatibility notes
+         - Add "Prerequisites" sections where relevant
+         - Add "Next Steps" at end of each guide
+
+      3. Navigation Aids
+         - Enhance overview.md with complete table of contents
+         - Add cross-references between related topics
+         - Create navigation links (see also, related docs)
+         - Test all relative links
+
+      4. End-to-End Testing
+         - Test explorer discovery with agent-related visions
+         - Test planner includes Agent SDK in tech stack
+         - Test builder can implement using only local docs
+         - Validate Read/Grep effectiveness
+         - Test code examples compile/run
+
+      5. Validation & Quality Checks
+         - Verify all cross-references resolve
+         - Check all code examples for syntax errors
+         - Ensure consistency across TS and Python docs
+         - Test searchability with common queries
+
+      6. Post-MVP Planning
+         - Document gaps or missing features
+         - Create update mechanism design
+         - Note areas for future enhancement
+
+      Files modified: 35+ documentation files + 1 agent prompt (2l-builder.md)
+
+      Success criteria:
+      - All 3 agent prompts updated (<150 tokens total)
+      - All files have metadata and navigation aids
+      - Explorer identifies Agent SDK opportunities (100% for "agent"/"bot"/"assistant" keywords)
+      - Builder successfully creates Agent SDK app using only local docs (3/3 test cases)
+      - All cross-references work
+      - All code examples are valid
+      - Searchability validated
+
+      Estimated duration: 4-6 hours
+      Risk level: LOW (builds on solid foundation)
+    status: PENDING
+    dependencies: [1, 2]

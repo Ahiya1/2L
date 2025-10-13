@@ -1,0 +1,547 @@
+plan_id: plan-1
+created_at: "2025-10-12T00:00:00Z"
+status: PLANNED
+total_iterations: 3
+
+strategy: |
+  This AI Mafia game requires a 3-iteration approach due to its VERY COMPLEX nature (35+ features, 40-60 hours estimated).
+
+  **Core Challenge:** Building a Discussion phase where 8-12 Claude 4.5 Sonnet agents engage in strategic multi-turn
+  conversations with memory, deception (Mafia), and logical deduction (Villagers). This is the heart of the game -
+  70% of spectator time spent here.
+
+  **Critical Technical Decisions:**
+  - NO "Agent SDK" exists - we build custom agent orchestration using @anthropic-ai/sdk
+  - Claude 4.5 Sonnet (claude-sonnet-4.5-20250929) with 200K context window
+  - MUST implement prompt caching (73% cost reduction: $17.55 → $4.62 per game)
+  - Sequential turn management during Discussion (parallel breaks conversation coherence)
+  - SQLite + Prisma (perfect for Stage 1 single-game scenario)
+  - Server-Sent Events for real-time spectator experience
+
+  **Iteration Strategy:**
+  1. **Iteration 1 (Foundation):** Build Discussion phase orchestration + basic AI agents. VALIDATE conversation
+     quality before proceeding. This is the highest-risk component - if Discussion isn't compelling, the game fails.
+
+  2. **Iteration 2 (Full Game):** Add Night/Voting phases, complete game loop, build spectator UI. Only proceed
+     after Iteration 1 Discussion meets quality gates.
+
+  3. **Iteration 3 (Polish):** Real-time enhancements, threading visualization, strategic highlights, performance
+     optimization.
+
+  **Success Criteria Gates:**
+  - After Iteration 1: Discussion produces "fascinating" strategic conversation (manual evaluation required)
+  - After Iteration 2: Full game completes from start to win condition
+  - After Iteration 3: All 7 success criteria met (multi-turn discussion, Mafia coordination, villager deduction,
+    natural flow, accurate memory, complete playthrough, compelling strategy)
+
+complexity_assessment: VERY COMPLEX
+estimated_hours: 46-58
+explorer_count: 4
+key_risks:
+  - Discussion phase conversation quality (agents must strategize, not monologue)
+  - API costs without prompt caching ($17/game vs $4 with caching)
+  - Agent memory management at scale (50+ messages, voting history, deaths)
+  - Turn orchestration deadlocks or slow pacing
+  - Context window limits in very long games
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 1
+    name: "Foundation & Discussion Core"
+    vision: "Build custom AI agent orchestration system and Discussion phase. Prove that Claude 4.5 Sonnet agents can engage in strategic multi-turn Mafia conversation with memory. Validate quality before building full game."
+    scope: |
+      **Phase: Foundation & AI Agent Orchestration**
+
+      This iteration establishes the foundation for AI agent conversations - the most critical and highest-risk
+      component. We build the Discussion phase in isolation to validate quality before investing in full game logic.
+
+      **Core Deliverables:**
+
+      1. **Project Setup**
+         - Next.js 14 App Router + TypeScript strict mode
+         - Prisma + SQLite with WAL mode enabled
+         - @anthropic-ai/sdk integration with Claude 4.5 Sonnet
+         - Environment: .anthropic-key.txt (already in .gitignore)
+         - Tailwind CSS setup
+
+      2. **Database Schema (Prisma)**
+         - `games` table: id, status, currentPhase, phaseEndTime, winner, createdAt
+         - `players` table: id, gameId, name, role (MAFIA/VILLAGER), personality, isAlive
+         - `discussion_messages` table: id, gameId, roundNumber, playerId, message, inReplyTo (threading), timestamp
+         - `votes` table: id, gameId, roundNumber, voterId, targetId, justification, timestamp
+         - `game_events` table: id, gameId, type, data (JSON), timestamp
+         - Indexes: (gameId, roundNumber), (gameId, timestamp) for fast context queries
+
+      3. **AI Agent Orchestration System**
+         - **Agent State Manager:** Create/manage 8-12 agent instances with roles and personalities
+         - **Context Builder:** Compile game history (messages, votes, deaths) into Claude API context
+         - **Conversation Memory:** Query database for full game history, format for agent consumption
+         - **System Prompts:** Role-specific prompts for Mafia (deception) vs Villager (deduction)
+         - **Personality Injection:** 5+ personality traits (analytical, aggressive, cautious, etc.) for diversity
+         - **Prompt Caching:** Implement caching of game history (CRITICAL for cost - 73% savings)
+
+      4. **Discussion Phase Orchestrator**
+         - **Turn Scheduler:** Sequential turn management (round-robin with 3-5 rounds per agent)
+         - **Turn Execution:** For each turn, fetch context → call Claude API → save message → broadcast
+         - **Response Timeout:** 10-second hard limit per agent turn with graceful fallback
+         - **Conversation Threading:** Store inReplyTo field for response chains (basic implementation)
+         - **Phase Timer:** 3-5 minute Discussion phase duration with phase completion logic
+         - **Multi-round System:** Each agent speaks 3-5 times per Discussion, building on prior statements
+
+      5. **Claude 4.5 Sonnet Integration**
+         - API client with retry logic and error handling
+         - Prompt engineering: Embed Mafia strategy (deflect, lie, blend in) and Villager strategy (pattern analysis, questioning)
+         - Response validation: Minimum 15 words, game-relevant keywords present
+         - Token usage logging: Track input/output tokens and cost per game
+         - Temperature: 0.8 for creative deception and varied responses
+         - Max tokens: 150-200 (control output length and cost)
+
+      6. **CLI Test Harness**
+         - Command to run isolated Discussion phase: `npm run test-discussion`
+         - Manual game setup: Create 10 agents (3 Mafia, 7 Villagers) with random personalities
+         - Run 5-minute Discussion with 40-50 agent responses
+         - Log full conversation transcript to file for manual review
+         - Display real-time conversation in terminal (agent name + message)
+         - Cost tracking: Report total tokens and API cost after test
+
+      7. **Basic Web UI (Discussion Viewer)**
+         - Simple page at `/test-discussion` to view live Discussion
+         - Display: Phase indicator, player grid (names, roles HIDDEN), scrolling discussion feed
+         - Real-time updates via Server-Sent Events (SSE)
+         - Fallback: 2-second polling if SSE unavailable
+         - No lobby, no full game loop yet - just Discussion phase viewer
+
+      **Quality Gates (MUST PASS before Iteration 2):**
+
+      ✓ **Conversation Coherence:** Agents respond to prior statements (not random monologues)
+      ✓ **Memory Accuracy:** Agents reference past events correctly (>80% accuracy)
+      ✓ **Strategic Behavior:** Mafia agents deflect/lie, Villagers question/deduce (manual review of 3+ test games)
+      ✓ **Natural Flow:** Conversation builds toward conclusion, not repetitive
+      ✓ **Fascinating Factor:** Human evaluator rates conversation 3+/5 "interesting to watch"
+      ✓ **Technical Stability:** Discussion completes without crashes, API errors <5%
+      ✓ **Cost Validation:** Prompt caching working (cost <$2 per Discussion test, verify via logs)
+
+      **Out of Scope (Defer to Iteration 2):**
+      - Night phase (Mafia private coordination)
+      - Voting phase
+      - Day announcement
+      - Win condition checking
+      - Full game loop
+      - Role reveal UI
+      - Vote tally UI
+
+      **Testing Strategy:**
+      - Run 10+ full Discussion phase tests via CLI
+      - Manually review transcripts for quality
+      - Iterate on system prompts based on observed weaknesses
+      - Test with different player counts (8, 10, 12 agents)
+      - Test different personality combinations
+      - Validate prompt caching with token usage logs
+
+      **Critical Success Factor:**
+      DO NOT PROCEED to Iteration 2 if Discussion phase doesn't produce compelling strategic conversation.
+      Better to iterate on prompts and orchestration than build a full game with boring AI agents.
+
+    estimated_hours: 18-22
+    complexity: VERY HIGH
+    risk_level: HIGH
+    status: PENDING
+
+    dependencies: []
+
+    key_features:
+      - Project setup (Next.js 14, TypeScript, Prisma, Tailwind)
+      - Database schema with discussion_messages, players, games
+      - AI agent orchestration (state manager, context builder, memory)
+      - Claude 4.5 Sonnet integration with prompt caching
+      - Discussion phase orchestrator (turn scheduler, multi-round system)
+      - System prompts (Mafia deception, Villager deduction strategies)
+      - Personality injection (5+ traits for agent diversity)
+      - CLI test harness for Discussion phase testing
+      - Basic web UI for Discussion viewing
+      - Server-Sent Events for real-time updates
+      - Conversation threading (inReplyTo field)
+      - Token usage logging and cost tracking
+
+    validation_criteria:
+      - Conversation coherence (agents respond contextually)
+      - Memory accuracy (>80% accurate references)
+      - Strategic behavior (Mafia lies, Villagers deduce)
+      - Natural conversation flow
+      - "Fascinating to watch" rating (3+/5)
+      - Discussion completes without crashes
+      - Prompt caching reduces cost to <$2 per test
+
+    technical_decisions:
+      ai_model: "claude-sonnet-4.5-20250929"
+      api_library: "@anthropic-ai/sdk"
+      database: "SQLite with Prisma ORM"
+      framework: "Next.js 14 App Router"
+      styling: "Tailwind CSS"
+      realtime: "Server-Sent Events + 2-second polling fallback"
+      prompt_caching: "REQUIRED - cache game history (73% cost reduction)"
+      turn_management: "Sequential (no parallelization)"
+      temperature: 0.8
+      max_tokens: 150-200
+
+  - iteration_id: 2
+    global_iteration: 2
+    name: "Full Game Loop & Spectator UI"
+    vision: "Build complete Mafia game loop (Night → Day → Discussion → Voting → Win Check) with full spectator web interface. Integrate Discussion phase from Iteration 1 into full game flow."
+    scope: |
+      **Phase: Complete Game Engine + Web UI**
+
+      This iteration builds on validated Discussion phase to create the complete Mafia game experience. We add
+      all remaining game phases, implement the full state machine, and build the polished spectator interface.
+
+      **Core Deliverables:**
+
+      1. **Game State Machine**
+         - Phase transitions: NIGHT → DAY_ANNOUNCEMENT → DISCUSSION → VOTING → WIN_CHECK → Loop
+         - Phase timing: Night (30-45s), Day (10s), Discussion (3-5min), Voting (45s)
+         - State management: Current phase, phase end time, round counter, alive players
+         - Phase orchestrator: Automatic phase transitions based on timers or completion
+
+      2. **Night Phase (Mafia Private Coordination)**
+         - Isolate Mafia agents (2-4 agents depending on player count)
+         - Private conversation: Similar to Discussion but Mafia-only, 30-45 seconds
+         - Victim selection: Consensus voting algorithm (majority vote determines target)
+         - Agent prompts: "Coordinate with fellow Mafia to choose tonight's victim"
+         - Store private messages separately (never exposed to Villagers or UI)
+         - Optimize: Can parallelize first round of proposals, then sequential voting
+
+      3. **Day Announcement Phase**
+         - Reveal victim from Night phase: "Agent X was eliminated"
+         - Brief reactions from alive agents (1-2 sentences each)
+         - Update player isAlive status in database
+         - Broadcast death event via SSE to spectator UI
+         - Duration: 10 seconds
+
+      4. **Voting Phase**
+         - Each alive agent votes to eliminate one player
+         - Agent context: Full Discussion history + voting history
+         - Vote justification: Agents explain their vote (50-100 tokens)
+         - Store votes in database with justification
+         - Vote tally: Count votes, determine majority
+         - Tie-breaking: Random selection or revote (implement random for MVP)
+         - Elimination: Mark target as isAlive=false
+         - Broadcast votes in real-time via SSE
+
+      5. **Win Condition Checker**
+         - After each elimination, check win conditions:
+           * Villagers win: All Mafia eliminated
+           * Mafia wins: Mafia count >= Villager count
+         - If win condition met, transition to GAME_OVER phase
+         - Store winner in database
+         - Broadcast GAME_OVER event
+
+      6. **Role Assignment Algorithm**
+         - Player count input: 8-12 (from lobby)
+         - Role distribution:
+           * 8 players: 2 Mafia, 6 Villagers
+           * 9 players: 3 Mafia, 6 Villagers
+           * 10 players: 3 Mafia, 7 Villagers
+           * 11 players: 3 Mafia, 8 Villagers
+           * 12 players: 4 Mafia, 8 Villagers
+         - Random role assignment at game start
+         - Store roles in database (never exposed until game over)
+
+      7. **Full Spectator UI**
+
+         **Lobby Screen** (`/`)
+         - Player count slider: 8-12 players
+         - "Start Game" button
+         - Game rules summary (optional)
+
+         **Live Game Screen** (`/game/[gameId]`)
+         - **Phase Indicator:** Large banner showing current phase + countdown timer
+         - **Player Grid:** 8-12 player cards showing:
+           * Agent name
+           * Alive/dead status (grayscale for dead)
+           * Roles HIDDEN until game over
+         - **Discussion Feed** (main UI element):
+           * Scrolling conversation log with auto-scroll
+           * Speaker name + message for each turn
+           * Basic threading: "Replying to [Agent X]" text if inReplyTo set
+           * Highlight accusations (red text for "I think [name] is Mafia")
+           * Timestamp for each message
+         - **Vote Tally** (Voting phase only):
+           * Show vote count per player
+           * Highlight majority threshold
+           * Display vote justifications
+         - **Phase Transitions:** Smooth visual updates when phase changes
+
+         **Game Over Screen** (`/game/[gameId]/results`)
+         - Winner announcement (Mafia or Villagers)
+         - Full role reveal for all players
+         - Complete game transcript (all messages)
+         - "New Game" button
+
+      8. **Enhanced Real-time Updates (SSE)**
+         - Event types:
+           * MESSAGE: New discussion message
+           * PHASE_CHANGE: Phase transition
+           * VOTE_CAST: Agent voted
+           * PLAYER_ELIMINATED: Someone died
+           * GAME_OVER: Win condition met
+         - SSE endpoint: `/api/game/[gameId]/stream`
+         - Keepalive: 15-second heartbeat
+         - Reconnection: Auto-reconnect with state catchup
+         - Polling fallback: Switch to 2-second polling after 3 SSE failures
+
+      9. **tRPC API Layer** (or Next.js API routes)
+         - `game.create(playerCount)`: Initialize new game
+         - `game.start(gameId)`: Start game (assign roles, begin Night phase)
+         - `game.getState(gameId)`: Fetch current game state
+         - `game.getMessages(gameId, round)`: Paginated discussion feed
+         - Type-safe API with Zod validation
+
+      10. **Integration of Iteration 1 Discussion**
+          - Import Discussion orchestrator from Iteration 1
+          - Integrate into DISCUSSION phase of state machine
+          - Pass full game context (previous rounds, deaths, votes) to Discussion
+          - Agents now have full game memory (not just single Discussion)
+
+      **Quality Gates (MUST PASS before Iteration 3):**
+
+      ✓ **Full Game Completion:** Game runs from start to win condition without crashes
+      ✓ **Mafia Coordination Works:** Mafia agents coordinate privately, Villagers unaware
+      ✓ **Voting Reflects Discussion:** Agents vote based on Discussion arguments (not random)
+      ✓ **Win Conditions Trigger:** Game correctly detects Mafia/Villager victory
+      ✓ **UI Displays Game State:** All phases visible, timers sync, votes display correctly
+      ✓ **Real-time Updates Work:** SSE delivers messages <1 second, fallback polling works
+      ✓ **Memory Across Rounds:** Agents reference previous rounds (not just current round)
+
+      **Out of Scope (Defer to Iteration 3):**
+      - Advanced conversation threading visualization (lines/graphs)
+      - Strategic pattern highlights (voting blocs, accusation networks)
+      - Agent "typing" indicators
+      - Post-game analytics dashboard
+      - Multiple concurrent games
+      - Mobile responsive design (desktop-first)
+
+      **Testing Strategy:**
+      - Run 5+ full game playthroughs (8, 10, 12 players)
+      - Verify Mafia wins and Villager wins both occur
+      - Test all edge cases: ties, last-minute eliminations
+      - Load test: 10 concurrent spectators via SSE
+      - Measure: Full game duration (target: 30-40 minutes)
+
+      **Critical Success Factor:**
+      The Discussion phase from Iteration 1 must seamlessly integrate into the full game loop. Agents must
+      maintain strategic continuity across multiple rounds (reference Round 1 events in Round 5 Discussion).
+
+    estimated_hours: 16-20
+    complexity: HIGH
+    risk_level: MEDIUM
+    status: PENDING
+
+    dependencies:
+      - iteration_1_discussion_orchestrator
+      - iteration_1_ai_agent_system
+      - iteration_1_database_schema
+
+    key_features:
+      - Game state machine (NIGHT → DAY → DISCUSSION → VOTING → WIN_CHECK)
+      - Night phase (Mafia private coordination)
+      - Day announcement phase (death reveal)
+      - Voting phase (agent votes with justifications)
+      - Win condition checker (Mafia vs Villagers)
+      - Role assignment algorithm (8-12 players)
+      - Lobby UI (player count selection, start game)
+      - Live game UI (phase indicator, player grid, discussion feed, vote tally)
+      - Game over UI (winner, role reveal, transcript)
+      - Enhanced SSE events (all phase transitions)
+      - tRPC API layer (game management)
+      - Multi-round memory (agents remember all previous rounds)
+      - Vote tally display
+      - Basic threading ("Replying to X")
+
+    validation_criteria:
+      - Full game completes to win condition
+      - Mafia coordination private and effective
+      - Voting reflects Discussion arguments
+      - Win conditions correctly detected
+      - UI displays all phases accurately
+      - SSE delivers messages <1 second
+      - Memory spans multiple rounds
+
+    technical_decisions:
+      state_machine: "Phase-based with automatic transitions"
+      night_phase: "Sequential Mafia voting after parallel proposals"
+      voting: "Sequential agent voting with justifications"
+      tie_breaking: "Random selection (MVP), revote (Stage 2)"
+      api_layer: "tRPC or Next.js API routes + Zod"
+      ui_framework: "Next.js 14 App Router with Server + Client Components"
+
+  - iteration_id: 3
+    global_iteration: 3
+    name: "Polish & Real-time Enhancements"
+    vision: "Polish spectator experience with advanced threading visualization, strategic highlights, performance optimization, and production readiness. Make the game 'fascinating to watch'."
+    scope: |
+      **Phase: Production Polish & Strategic Depth**
+
+      This iteration elevates the spectator experience from functional to compelling. We add visual enhancements
+      that make strategy visible, optimize performance, and ensure production readiness.
+
+      **Core Deliverables:**
+
+      1. **Advanced Conversation Threading**
+         - **Visual thread connections:** CSS indentation or subtle lines showing response chains
+         - **Thread preview:** Hover over message to see what it's replying to
+         - **Accusation highlighting:** Bold/red text for accusations ("I think X is Mafia")
+         - **Defense highlighting:** Blue text for defenses when accused agent responds
+         - **Question highlighting:** Yellow text for questions directed at specific agents
+         - **Alliance signals:** Green text for positive statements about other players
+
+      2. **Strategic Pattern Visualization**
+         - **Vote history panel:** Collapsible sidebar showing all previous votes
+         - **Voting pattern analysis:** Highlight when agents consistently vote together
+         - **Accusation network:** Show who has accused whom (simple list or graph)
+         - **Suspicion indicators:** Visual cues for players accused multiple times
+         - **Activity tracker:** Show how many times each agent has spoken
+
+      3. **Enhanced Discussion Feed**
+         - **Agent avatars:** Generated avatar/icon for each agent (identicon or simple color)
+         - **Message timestamps:** Relative time ("2 minutes ago") or absolute
+         - **Turn numbers:** "Turn 5 of 40" indicator
+         - **Phase progress bar:** Visual indicator of Discussion time remaining
+         - **Smooth scrolling:** Auto-scroll to latest message with smooth animation
+         - **Scroll lock toggle:** Allow spectators to pause auto-scroll to review earlier messages
+
+      4. **Real-time Polish**
+         - **Agent "is typing..." indicator:** Show when agent is generating response
+         - **Optimistic UI updates:** Display message immediately, confirm with SSE
+         - **Connection status indicator:** Show if SSE connected or using polling fallback
+         - **Reconnection notifications:** Inform user if SSE reconnects after drop
+         - **Message delivery animations:** Fade-in for new messages
+
+      5. **Performance Optimization**
+         - **Lazy loading:** Only render visible messages in discussion feed (virtualized list)
+         - **Database query optimization:** Add indexes on frequently queried fields
+         - **Context pruning:** Summarize rounds >5 turns old to reduce token usage (if cost exceeds $5/game)
+         - **Response caching:** Cache repeated agent patterns (e.g., "I agree with X")
+         - **Memory profiling:** Monitor Node.js memory usage, fix any leaks
+
+      6. **Prompt Engineering Refinement**
+         - **Iterate on system prompts** based on 10-20 full game observations
+         - **Enhance Mafia deception tactics:** Add more sophisticated lying strategies
+         - **Enhance Villager deduction:** Add voting pattern analysis instructions
+         - **Personality diversity:** Expand to 8-10 personality types
+         - **Anti-repetition:** Add constraints to prevent agents from repeating themselves
+         - **Strategic depth:** Add chain-of-thought reasoning prompts for agents
+
+      7. **Game Transcript Export**
+         - **Full transcript download:** JSON or text file with complete game history
+         - **Shareable game URL:** Permalink to completed game for replay viewing
+         - **Replay mode:** View completed game with timeline scrubbing
+         - **Highlight reel:** Automatic detection of key moments (dramatic votes, clever lies)
+
+      8. **Error Handling & Edge Cases**
+         - **Agent timeout recovery:** If agent doesn't respond in 10s, generate fallback response
+         - **API failure handling:** Retry logic with exponential backoff
+         - **SSE disconnection:** Seamless fallback to polling
+         - **Database transaction rollbacks:** Handle phase transition failures
+         - **Game abandonment:** Detect if game stuck, allow manual reset
+
+      9. **Production Readiness**
+         - **Environment variables:** Properly configured for production
+         - **Logging:** Structured logs with log levels (info, warn, error)
+         - **Monitoring:** Token usage, API latency, game completion rate
+         - **Cost alerts:** Warn if single game exceeds $10 (caching failure)
+         - **Rate limiting:** Protect against API abuse
+         - **Deployment:** Deploy to Vercel or similar platform
+
+      10. **Documentation**
+          - **README:** Setup instructions, environment variables
+          - **Architecture doc:** System overview for future developers
+          - **Prompt library:** Document all system prompts and rationale
+          - **Troubleshooting guide:** Common issues and solutions
+
+      **Quality Gates (Final Success Criteria):**
+
+      ✓ **All 7 Success Criteria Met:**
+      1. Multi-turn discussion with logical responses ✓
+      2. Mafia coordination (private) + convincing lies (public) ✓
+      3. Villager deduction detects patterns and builds cases ✓
+      4. Natural conversation flow (not robotic) ✓
+      5. Memory accuracy (agents reference past events correctly) ✓
+      6. Complete playthrough (game reaches win condition reliably) ✓
+      7. **Fascinating to watch** (spectators engaged, strategy visible) ✓
+
+      ✓ **Performance Targets:**
+      - Cost per game: <$5 (with prompt caching)
+      - Discussion phase: 3-5 minutes (actual)
+      - Full game: <45 minutes total
+      - SSE latency: <500ms
+      - Memory usage: <200MB
+
+      ✓ **Production Criteria:**
+      - No crashes in 10 consecutive games
+      - API error rate <2%
+      - All error scenarios handled gracefully
+      - Documentation complete
+      - Deployed and accessible via URL
+
+      **Out of Scope (Future Enhancements):**
+      - Human players (Stage 2)
+      - Multiple concurrent games (Stage 2)
+      - Special roles (Detective, Doctor, etc.) (Stage 2)
+      - AI detection challenge (Stage 3)
+      - Voice/audio agents (Stage 3)
+      - Mobile app (Stage 3)
+
+      **Testing Strategy:**
+      - Run 20+ full games to validate stability
+      - Load test: 20 concurrent spectators
+      - Test with slow network (simulate poor connections)
+      - Manual review: Rate 10 games on "fascinating" scale
+      - Performance profiling: Measure memory, CPU, API latency
+
+      **Critical Success Factor:**
+      After this iteration, the game must be production-ready and genuinely fascinating to watch. Spectators
+      should be able to follow strategy emergence, understand why agents vote certain ways, and feel tension
+      during close votes.
+
+    estimated_hours: 12-16
+    complexity: MEDIUM
+    risk_level: LOW
+    status: PENDING
+
+    dependencies:
+      - iteration_2_full_game_loop
+      - iteration_2_spectator_ui
+      - iteration_2_sse_implementation
+
+    key_features:
+      - Advanced conversation threading (visual connections, hover previews)
+      - Strategic pattern visualization (vote history, accusation network)
+      - Enhanced discussion feed (avatars, timestamps, progress bar)
+      - Real-time polish (typing indicators, connection status, animations)
+      - Performance optimization (lazy loading, query optimization, context pruning)
+      - Prompt engineering refinement (sophisticated tactics, anti-repetition)
+      - Game transcript export (JSON/text download, shareable URL)
+      - Replay mode (timeline scrubbing, highlight reel)
+      - Error handling (timeouts, API failures, SSE fallback)
+      - Production readiness (logging, monitoring, cost alerts, deployment)
+      - Documentation (README, architecture, prompts, troubleshooting)
+
+    validation_criteria:
+      - All 7 success criteria met
+      - Cost per game <$5
+      - Discussion phase 3-5 minutes
+      - Full game <45 minutes
+      - SSE latency <500ms
+      - No crashes in 10 consecutive games
+      - API error rate <2%
+      - Production deployed
+
+    technical_decisions:
+      threading_ui: "CSS indentation + hover previews"
+      virtualization: "react-window or custom implementation for discussion feed"
+      avatars: "Identicon or generated based on agent name"
+      monitoring: "Structured logging with pino"
+      deployment: "Vercel (Next.js native platform)"
+
+api_key_location: ".anthropic-key.txt"
+github_repo: null

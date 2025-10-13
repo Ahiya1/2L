@@ -1,0 +1,10 @@
+.anthropic-key.txt
+node_modules/
+.next/
+.env
+.env.local
+.anthropic-key.txt
+*.log
+.DS_Store
+.2L/events.jsonl
+.2L/dashboard/

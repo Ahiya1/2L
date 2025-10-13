@@ -1,0 +1,15 @@
+current_plan: plan-1
+global_iteration_counter: 1
+
+plans:
+  - plan_id: plan-1
+    name: "AI Mafia - Spectator Mode with Autonomous AI Agents"
+    status: ITERATION_1_VALIDATION_PENDING
+    created_at: "2025-10-12T00:00:00Z"
+    vision_file: .2L/plan-1/vision.md
+    master_plan_file: .2L/plan-1/master-plan.yaml
+    current_iteration: 1
+    current_phase: validation
+    master_exploration:
+      num_explorers: 4
+      complexity_level: COMPLEX

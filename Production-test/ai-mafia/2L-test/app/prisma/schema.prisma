@@ -1,0 +1,143 @@
+// Prisma schema for AI Mafia Game
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id             String    @id @default(cuid())
+  status         String // "LOBBY", "NIGHT", "DAY", "DISCUSSION", "VOTING", "GAME_OVER"
+  currentPhase   String?
+  phaseStartTime DateTime?
+  phaseEndTime   DateTime?
+  roundNumber    Int       @default(1)
+  winner         String? // "MAFIA", "VILLAGERS", null
+  nightVictim    String? // Player ID of night kill victim
+  playerCount    Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  players            Player[]
+  discussionMessages DiscussionMessage[]
+  nightMessages      NightMessage[]
+  votes              Vote[]
+  gameEvents         GameEvent[]
+  sharedGames        SharedGame[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt])
+}
+
+model Player {
+  id                String  @id @default(cuid())
+  gameId            String
+  name              String
+  role              String // "MAFIA", "VILLAGER"
+  personality       String // "analytical", "aggressive", "cautious", "social", "suspicious"
+  isAlive           Boolean @default(true)
+  position          Int // Display order: 0-11
+  eliminatedInRound Int? // Which round player was eliminated
+  eliminationType   String? // "NIGHTKILL", "DAYKILL"
+
+  game          Game                @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  messages      DiscussionMessage[] @relation("MessageAuthor")
+  nightMessages NightMessage[]      @relation("NightMessageAuthor")
+  votesGiven    Vote[]              @relation("Voter")
+  votesReceived Vote[]              @relation("Target")
+
+  @@unique([gameId, position])
+  @@index([gameId, isAlive])
+  @@index([gameId, role])
+  @@index([gameId, role, isAlive])
+  @@index([gameId, isAlive, role])
+}
+
+model DiscussionMessage {
+  id          String   @id @default(cuid())
+  gameId      String
+  roundNumber Int
+  playerId    String
+  message     String
+  inReplyToId String?
+  timestamp   DateTime @default(now())
+  turn        Int // Turn number within this Discussion phase
+
+  game      Game                @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player    Player              @relation("MessageAuthor", fields: [playerId], references: [id], onDelete: Cascade)
+  inReplyTo DiscussionMessage?  @relation("ReplyThread", fields: [inReplyToId], references: [id], onDelete: SetNull)
+  replies   DiscussionMessage[] @relation("ReplyThread")
+
+  @@index([gameId, roundNumber, timestamp])
+  @@index([gameId, playerId])
+  @@index([inReplyToId])
+  @@index([gameId, timestamp])
+}
+
+model NightMessage {
+  id          String   @id @default(cuid())
+  gameId      String
+  roundNumber Int
+  playerId    String
+  message     String
+  inReplyToId String?
+  timestamp   DateTime @default(now())
+  turn        Int // Turn number within this Night phase
+
+  game      Game           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player    Player         @relation("NightMessageAuthor", fields: [playerId], references: [id], onDelete: Cascade)
+  inReplyTo NightMessage?  @relation("NightReplyThread", fields: [inReplyToId], references: [id], onDelete: SetNull)
+  replies   NightMessage[] @relation("NightReplyThread")
+
+  @@index([gameId, roundNumber, timestamp])
+  @@index([gameId, playerId])
+}
+
+model Vote {
+  id            String   @id @default(cuid())
+  gameId        String
+  roundNumber   Int
+  voterId       String
+  targetId      String
+  justification String
+  phaseType     String   @default("VOTING") // "VOTING"
+  voteOrder     Int      @default(0) // Sequence within voting phase
+  timestamp     DateTime @default(now())
+
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  voter  Player @relation("Voter", fields: [voterId], references: [id], onDelete: Cascade)
+  target Player @relation("Target", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, roundNumber])
+  @@index([gameId, voterId])
+  @@index([gameId, targetId])
+  @@index([gameId, roundNumber, targetId])
+}
+
+model GameEvent {
+  id        String   @id @default(cuid())
+  gameId    String
+  type      String // "PHASE_CHANGE", "PLAYER_ELIMINATED", "VOTE_CAST", "GAME_START", "GAME_END"
+  data      String // JSON: {phase: "NIGHT", eliminatedPlayer: "Agent-1", ...}
+  timestamp DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, timestamp])
+  @@index([type, timestamp])
+}
+
+model SharedGame {
+  id        String   @id
+  gameId    String   @unique
+  createdAt DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@index([gameId])
+}

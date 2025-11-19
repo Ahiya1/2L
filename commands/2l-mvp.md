@@ -732,6 +732,10 @@ def execute_iteration(plan_id, iter_id, global_iter, iteration_config):
 
     ITER_DIR = f".2L/{plan_id}/iteration-{global_iter}"
 
+    # Create iteration directory and record start time
+    mkdir -p ${ITER_DIR}
+    echo $(date +%s) > ${ITER_DIR}/.start_time
+
     # Update config
     update_config_current_phase('exploration')
     update_config_current_iteration(global_iter)
@@ -1190,6 +1194,10 @@ Create report at: {validation_dir}/validation-report.md"
 
     if validation_status == 'PASS':
         print(f"   ✅ Validation PASSED")
+
+        # Orchestrator Reflection: Merge learnings before iteration complete
+        orchestrator_reflection(plan_id, global_iter, ITER_DIR)
+
         return  # Iteration complete!
 
     # Phase 6: HEALING (if validation failed)
@@ -1362,8 +1370,33 @@ Create report at: {healing_dir}/healer-{healer_id}-report.md"
         # (Simple merge, or could spawn mini-integrator)
         # For healing, we often just verify files changed by healers
 
-        # Re-validate
+        # Check if healing made any changes (before wasting 2nd attempt)
+        git_diff_check = run_command("git diff --stat", capture_output=True)
+        if healing_attempt == 1 and not git_diff_check.stdout.strip():
+            print(f"      ⚠️  ERROR: Healing made no changes. Escalating to manual intervention.")
+            print("")
+            print("=" * 60)
+            print("MANUAL INTERVENTION REQUIRED")
+            print("=" * 60)
+            print(f"Healing attempt {healing_attempt} made no file changes.")
+            print(f"Review healer reports: {healing_dir}/healer-*.md")
+            print("")
+            raise Exception("Healing made no changes - manual intervention required")
+
+        # Re-validation checkpoint
         print(f"         Re-validating...")
+
+        # EVENT: phase_change (Re-validation Start)
+        # Signal that re-validation is starting after healing attempt
+        if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+          log_2l_event "phase_change" "Starting re-validation after healing attempt ${healing_attempt}" "validation" "orchestrator"
+        fi
+
+        # Event details:
+        # - event_type: "phase_change" - Marks re-validation start
+        # - data: Includes healing attempt number for context
+        # - phase: "validation" - Re-validation is part of validation phase
+        # - agent_id: "orchestrator" - Orchestrator coordinates re-validation
 
         validation_report_heal = f"{healing_dir}/validation-report.md"
 
@@ -1384,18 +1417,32 @@ Create report at: {healing_dir}/validation-report.md"
         # Check re-validation
         validation_status = extract_validation_status(validation_report_heal)
 
+        # EVENT: validation_result (Re-validation Outcome)
+        # Document the re-validation outcome
+        if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+          log_2l_event "validation_result" "Re-validation attempt ${healing_attempt}: ${validation_status}" "validation" "validator-revalidation"
+        fi
+
+        # Event details:
+        # - event_type: "validation_result" - Validation outcome marker
+        # - data: Includes healing attempt number and PASS/FAIL status
+        # - agent_id: "validator-revalidation" - Distinguishes from first-pass validator
+
         if validation_status == 'PASS':
             print(f"      ✅ Healing successful!")
+
+            # Orchestrator Reflection: Merge learnings before iteration complete
+            orchestrator_reflection(plan_id, global_iter, ITER_DIR)
 
             # EVENT: iteration_complete (After Healing)
             # Mark successful iteration completion after healing
             if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-              log_2l_event "iteration_complete" "Iteration ${global_iter} completed after healing" "complete" "orchestrator"
+              log_2l_event "iteration_complete" "Iteration ${global_iter} completed after ${healing_attempt} healing round(s)" "complete" "orchestrator"
             fi
 
             # Event details:
             # - event_type: "iteration_complete" - Iteration success marker
-            # - data: Notes iteration completed after healing (not first-pass validation)
+            # - data: Notes iteration completed after healing (includes healing round count)
             # - phase: "complete" - Terminal phase
             # - Purpose: Dashboard marks iteration as successful, ready for next iteration
 
@@ -1628,6 +1675,101 @@ def update_config_github_repo(plan_id, repo_url):
             break
 
     write_yaml(config_file, config)
+
+
+def orchestrator_reflection(plan_id, global_iter, iteration_dir):
+    """
+    Orchestrator reflection: Merge iteration learnings into global knowledge base.
+
+    This function runs after validation PASSES (first-pass or after healing).
+    It merges learnings from iteration-specific learnings.yaml into the global
+    .2L/global-learnings.yaml file with metadata enrichment.
+
+    Args:
+        plan_id: Current plan ID (e.g., "plan-3")
+        global_iter: Global iteration number
+        iteration_dir: Path to iteration directory (e.g., ".2L/plan-3/iteration-6")
+    """
+
+    print(f"   🧘 Orchestrator reflection: Merging learnings into global knowledge base...")
+
+    # Check if learnings.yaml exists in iteration directory
+    learnings_path = f"{iteration_dir}/learnings.yaml"
+
+    if not os.path.exists(learnings_path):
+        print(f"      ℹ️  No learnings.yaml found. Iteration had no failures to learn from.")
+        return 0
+
+    # Calculate iteration metadata
+    iteration_start_time_file = f"{iteration_dir}/.start_time"
+    iteration_start_time = 0
+    if os.path.exists(iteration_start_time_file):
+        with open(iteration_start_time_file, 'r') as f:
+            iteration_start_time = int(f.read().strip())
+
+    iteration_end_time = int(time.time())
+    duration_seconds = iteration_end_time - iteration_start_time if iteration_start_time > 0 else 0
+
+    # Count healing rounds
+    healing_rounds = 0
+    for healing_dir in glob.glob(f"{iteration_dir}/healing-*"):
+        if os.path.isdir(healing_dir):
+            healing_rounds += 1
+
+    # Count files modified (git diff from HEAD~1 if commit exists)
+    files_modified_result = run_command("git diff --name-only HEAD~1 2>/dev/null | wc -l",
+                                       capture_output=True, check=False)
+    files_modified = int(files_modified_result.stdout.strip()) if files_modified_result.returncode == 0 else 0
+
+    # Call Python helper to merge learnings
+    discovered_in = f"plan-{plan_id}-iter-{global_iter}"
+    global_learnings_path = ".2L/global-learnings.yaml"
+
+    merge_result = run_command(
+        f"python3 ~/.claude/lib/2l-yaml-helpers.py merge_learnings "
+        f"--iteration-learnings '{learnings_path}' "
+        f"--global-learnings '{global_learnings_path}' "
+        f"--discovered-in '{discovered_in}' "
+        f"--duration {duration_seconds} "
+        f"--healing-rounds {healing_rounds} "
+        f"--files-modified {files_modified}",
+        capture_output=True,
+        check=False
+    )
+
+    if merge_result.returncode == 0:
+        # Count learnings merged (read from learnings.yaml)
+        try:
+            with open(learnings_path, 'r') as f:
+                import yaml
+                learnings_data = yaml.safe_load(f)
+                learnings_count = len(learnings_data.get('learnings', []))
+
+            print(f"      ✅ Reflection complete: {learnings_count} learning(s) merged into global knowledge base")
+
+            # EVENT: reflection_complete
+            # Document successful reflection
+            if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+              log_2l_event "reflection_complete" f"{learnings_count} learnings added to global knowledge base" "reflection" "orchestrator"
+            fi
+
+            # Event details:
+            # - event_type: "reflection_complete" - NEW event type for reflection phase
+            # - data: Number of learnings merged
+            # - phase: "reflection" - Post-validation reflection phase
+            # - agent_id: "orchestrator" - Orchestrator performs reflection
+
+            return learnings_count
+
+        except Exception as e:
+            print(f"      ⚠️  Warning: Could not count learnings: {e}")
+            return 0
+
+    else:
+        # Graceful degradation - reflection failure doesn't block iteration
+        print(f"      ⚠️  Warning: Reflection failed (non-critical, continuing)")
+        print(f"      Error: {merge_result.stderr}")
+        return 0
 ```
 
 ---

@@ -1,0 +1,181 @@
+plan_id: plan-5
+created_at: "2025-11-19T04:05:00Z"
+status: PLANNED
+total_iterations: 2
+
+strategy: |
+  Build 2L's self-reflection infrastructure in 2 iterations following dependency chains.
+
+  Iteration 1 establishes the foundation: learning capture, re-validation, and orchestrator
+  reflection. This creates the data pipeline from validators → healers → global knowledge base.
+
+  Iteration 2 completes the loop: aggregation system and /2l-improve command that enables
+  automated self-improvement. This closes the recursive loop: learnings → improvements →
+  better learnings.
+
+  Key architectural decisions:
+  - Extend existing agents (validator, orchestrator) rather than create new ones
+  - Use YAML for learnings (consistent with config.yaml pattern)
+  - Leverage symlink architecture for immediate live updates
+  - Implement status lifecycle (IDENTIFIED → IMPLEMENTED → VERIFIED) to prevent duplicate fixes
+  - Support two vision workflows: human-driven (/2l-vision) and data-driven (/2l-improve)
+
+  Risk mitigation:
+  - Re-validation checkpoint prevents false completion states
+  - Graceful degradation if learning capture fails
+  - Confirmation prompt before self-modification
+  - Never modify core orchestrator during self-improvement (only agents/commands)
+  - Git commits after each change for rollback capability
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 6
+    name: "Learning Capture & Re-validation Foundation"
+    vision: "Establish learning capture system, re-validation checkpoints, and orchestrator reflection module"
+    scope: |
+      Feature 1: Per-iteration Learning Capture
+      - Validators create learnings.yaml on FAIL with structured data
+      - Learning format: issue, root_cause, solution, severity, affected_files
+      - Graceful degradation if write fails
+
+      Feature 2: Re-validation Checkpoint
+      - After healing completes, automatically re-spawn validator
+      - If PASS: mark iteration complete, commit to git
+      - If FAIL: second healing round OR escalate to user
+      - Emit re-validation events to events.jsonl
+
+      Feature 4: Orchestrator Reflection (partial)
+      - After validation PASSES, before git commit
+      - If learnings.yaml exists, merge into .2L/global-learnings.yaml
+      - Mark new learnings with status: IDENTIFIED
+      - Add iteration metadata (duration, healing_rounds, files_modified)
+
+      Success criteria:
+      - Validators reliably create learnings.yaml on FAIL (100% coverage)
+      - Re-validation prevents false iteration completion (0% false COMPLETE)
+      - Global learnings file accumulates entries automatically
+      - All events logged for dashboard visibility
+
+    status: PENDING
+    dependencies: []
+
+    estimated_hours: 8-10
+    complexity: MEDIUM
+    critical_risks:
+      - Learning YAML schema must be well-defined upfront
+      - Re-validation must not create infinite healing loops
+      - Orchestrator reflection must be atomic (no partial writes)
+
+  - iteration_id: 2
+    global_iteration: 7
+    name: "Self-Improvement Automation via /2l-improve"
+    vision: "Build /2l-improve command that aggregates learnings, detects patterns, auto-generates vision, and orchestrates self-improvement"
+    scope: |
+      Feature 3: Learning Aggregation with Status Tracking (completion)
+      - Scan Prod/**/.2L/learnings.yaml files (already done by orchestrator reflection)
+      - Detect duplicate learnings (same issue across projects)
+      - Track status lifecycle: IDENTIFIED → IMPLEMENTED → VERIFIED
+      - Filter by status for /2l-improve (show only IDENTIFIED)
+
+      Feature 5: /2l-improve Command
+      - Read .2L/global-learnings.yaml
+      - Detect recurring patterns (same issue × multiple projects)
+      - Rank by impact (severity × occurrences)
+      - Auto-generate vision.md from top 2-3 patterns
+      - Present proposed improvements with confirmation prompt
+      - If confirmed: automatically run /2l-mvp in meditation space
+      - After /2l-mvp completes: mark learnings as IMPLEMENTED
+      - Manual override: /2l-improve --manual (shows patterns, waits for /2l-vision)
+      - Changes are immediately live via symlinks
+
+      Success criteria:
+      - /2l-improve aggregates learnings from 3+ projects
+      - Pattern detection identifies recurring issues
+      - Vision auto-generation produces valid vision.md
+      - Confirmation workflow prevents accidental self-modification
+      - 2L successfully modifies at least 1 agent/command file
+      - Status updates prevent duplicate fixes
+
+    status: PENDING
+    dependencies:
+      - iteration-1
+
+    estimated_hours: 10-14
+    complexity: HIGH
+    critical_risks:
+      - Meta-circular self-modification safety (never modify orchestrator)
+      - Pattern detection false positives (rank by severity helps)
+      - Vision auto-generation quality depends on learning data quality
+      - Git conflicts during self-modification (abort and notify user)
+      - Symlink integrity (verify before modifying)
+
+---
+
+# Master Exploration Summary
+
+## Complexity Consensus
+- Explorer 1: COMPLEX (18-24 hrs, 3 iterations)
+- Explorer 2: COMPLEX (18-24 hrs, 3 iterations)
+- Explorer 3: COMPLEX (18-24 hrs, 2 iterations)
+- Explorer 4: MEDIUM (8-12 hrs, 2 iterations)
+
+**Decision:** COMPLEX, 2 iterations (18-24 hrs total)
+
+**Rationale:** While meta-circular architecture adds complexity, well-defined scope and
+existing patterns (event system, YAML, symlinks) make this achievable in 2 focused iterations.
+Explorer 4's performance analysis confirms scalability is not a concern.
+
+## Key Insights from Exploration
+
+**Architecture (Explorer 1):**
+- 7 major components identified
+- Meta-circular pattern requires careful file handling
+- Can extend existing agents rather than create new ones
+
+**Dependencies (Explorer 2):**
+- 3 critical dependency chains mapped
+- Chain 1: Learning capture → Aggregation → /2l-improve
+- Chain 2: Re-validation → Reflection → Status updates
+- Chain 3: Chains 1+2 → Self-improvement loop
+
+**Integration (Explorer 3):**
+- 3 major user flows analyzed with data flow maps
+- Re-validation complexity is HIGH (orchestrator must re-spawn validator)
+- Vision auto-generation is novel workflow (data-driven vs conversation-driven)
+
+**Performance (Explorer 4):**
+- Data volumes will remain trivial (<500KB total)
+- /2l-improve scan time: <4s even at 3-year scale
+- No optimization needed for foreseeable future
+- Incremental aggregation (via orchestrator reflection) eliminates scanning overhead
+
+## Technology Stack Decisions
+
+**Data formats:**
+- YAML for learnings (consistent with config.yaml)
+- YAML for global learnings
+- Markdown for vision auto-generation templates
+
+**Integration points:**
+- Extend 2l-validator.md for learning capture
+- Extend 2l-mvp.md for re-validation and reflection
+- Create 2l-improve.md as new command
+- Leverage lib/2l-event-logger.sh for observability
+
+**Infrastructure:**
+- Meditation space: ~/Ahiya/2L/ (source + reflection)
+- Symlinks: ~/.claude/ → ~/Ahiya/2L/ (immediate live updates)
+- Git: Auto-commit after self-improvements
+- Events: Use existing events.jsonl for re-validation tracking
+
+## Success Metrics
+
+1. **Learning capture:** 100% of FAIL validations create learnings.yaml
+2. **Re-validation:** 0% false COMPLETE status
+3. **Aggregation:** Successfully aggregate from 3+ projects (ghstats, SplitEasy, ai-mafia)
+4. **Self-modification:** 2L modifies at least 1 agent/command file via /2l-improve
+
+---
+
+*Master plan synthesized from 4 explorer reports (156KB total analysis)*
+*Created: 2025-11-19T04:05:00Z*

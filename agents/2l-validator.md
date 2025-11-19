@@ -972,6 +972,293 @@ Use these standards to assess quality:
 - Many confusing sections
 - Many code smells
 
+## Step 5: Learning Capture (FAIL Status Only)
+
+**When to capture learnings:** Only when validation status is FAIL, PARTIAL, UNCERTAIN, or INCOMPLETE.
+
+**Do NOT capture learnings when status is PASS.**
+
+After writing the validation report, if status indicates failures or issues, create a structured learnings file to help 2L systematically improve.
+
+### Python Helper Functions for Learning Capture
+
+Add this Python code block to your workflow:
+
+```python
+#!/usr/bin/env python3
+"""
+Learning Capture Helper Functions
+Extracts structured learnings from validation failures.
+"""
+
+import os
+import sys
+import yaml
+from datetime import datetime
+
+def generate_learning_id(project_name, existing_learnings):
+    """
+    Generate unique learning ID: project-YYYYMMDD-NNN
+
+    Args:
+        project_name: Name of project (e.g., "wealth", "ai-mafia")
+        existing_learnings: List of existing learning dicts in same file
+
+    Returns:
+        learning_id: Unique ID string (e.g., "wealth-20251119-001")
+    """
+    # Get date in YYYYMMDD format
+    date_str = datetime.now().strftime("%Y%m%d")
+
+    # Count existing learnings (sequence number)
+    next_seq = len(existing_learnings) + 1
+
+    # Format: project-YYYYMMDD-NNN
+    return f"{project_name}-{date_str}-{next_seq:03d}"
+
+def extract_learnings_from_validation_report(validation_report_path):
+    """
+    Parse validation report to extract learnings.
+
+    Args:
+        validation_report_path: Path to validation-report.md
+
+    Returns:
+        learnings: List of learning dicts
+    """
+    learnings = []
+
+    # Read validation report
+    with open(validation_report_path, 'r') as f:
+        content = f.read()
+
+    # Parse Critical Issues section
+    if "### Critical Issues" in content:
+        # Extract critical issues section
+        critical_section = content.split("### Critical Issues")[1].split("###")[0]
+
+        # Parse each issue
+        issue_blocks = critical_section.split("\n\n")[1:]  # Skip section header
+        for block in issue_blocks:
+            if block.strip() and block.strip().startswith("1.") or block.strip().startswith("2.") or block.strip().startswith("3."):
+                # Extract issue details
+                lines = block.strip().split("\n")
+                if len(lines) > 0:
+                    issue_title = lines[0].replace("**", "").strip()
+                    if issue_title.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.")):
+                        issue_title = issue_title[2:].strip()
+
+                    category = "validation"
+                    location = ""
+                    impact = "Unknown"
+                    suggested_fix = "Requires investigation"
+
+                    # Parse issue fields
+                    for line in lines[1:]:
+                        if "Category:" in line:
+                            category = line.split("Category:")[1].strip().lower()
+                        elif "Location:" in line:
+                            location = line.split("Location:")[1].strip()
+                        elif "Impact:" in line:
+                            impact = line.split("Impact:")[1].strip()
+                        elif "Suggested fix:" in line:
+                            suggested_fix = line.split("Suggested fix:")[1].strip()
+
+                    # Extract affected files from location
+                    affected_files = []
+                    if location:
+                        # Extract file path from location (format: "path/to/file.ts:line")
+                        file_path = location.split(":")[0].strip() if ":" in location else location.strip()
+                        if file_path:
+                            affected_files.append(file_path)
+
+                    # Create learning dict
+                    learning = {
+                        'category': category if category in ['validation', 'integration', 'healing', 'typescript', 'test', 'build'] else 'validation',
+                        'severity': 'critical',
+                        'issue': issue_title,
+                        'root_cause': impact if impact != "Unknown" else "UNKNOWN - requires investigation",
+                        'solution': suggested_fix,
+                        'recurrence_risk': 'high',  # Critical issues are high recurrence risk
+                        'affected_files': affected_files if affected_files else ["Unknown"]
+                    }
+                    learnings.append(learning)
+
+    # Parse Major Issues section
+    if "### Major Issues" in content:
+        # Extract major issues section
+        major_section = content.split("### Major Issues")[1].split("###")[0]
+
+        # Parse each issue (similar logic to critical)
+        issue_blocks = major_section.split("\n\n")[1:]
+        for block in issue_blocks:
+            if block.strip() and (block.strip().startswith("1.") or block.strip().startswith("2.") or block.strip().startswith("3.")):
+                lines = block.strip().split("\n")
+                if len(lines) > 0:
+                    issue_title = lines[0].replace("**", "").strip()
+                    if issue_title.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.")):
+                        issue_title = issue_title[2:].strip()
+
+                    category = "validation"
+                    location = ""
+                    impact = "Unknown"
+                    suggested_fix = "Requires investigation"
+
+                    for line in lines[1:]:
+                        if "Category:" in line:
+                            category = line.split("Category:")[1].strip().lower()
+                        elif "Location:" in line:
+                            location = line.split("Location:")[1].strip()
+                        elif "Impact:" in line:
+                            impact = line.split("Impact:")[1].strip()
+                        elif "Suggested fix:" in line:
+                            suggested_fix = line.split("Suggested fix:")[1].strip()
+
+                    affected_files = []
+                    if location:
+                        file_path = location.split(":")[0].strip() if ":" in location else location.strip()
+                        if file_path:
+                            affected_files.append(file_path)
+
+                    learning = {
+                        'category': category if category in ['validation', 'integration', 'healing', 'typescript', 'test', 'build'] else 'validation',
+                        'severity': 'medium',
+                        'issue': issue_title,
+                        'root_cause': impact if impact != "Unknown" else "UNKNOWN - requires investigation",
+                        'solution': suggested_fix,
+                        'recurrence_risk': 'medium',
+                        'affected_files': affected_files if affected_files else ["Unknown"]
+                    }
+                    learnings.append(learning)
+
+    return learnings
+
+def create_learnings_yaml(validation_dir, project_name, plan_id, iteration_id):
+    """
+    Create learnings.yaml from validation failures.
+
+    Args:
+        validation_dir: Directory containing validation-report.md
+        project_name: Name of project
+        plan_id: Current plan (e.g., "plan-3")
+        iteration_id: Current iteration (e.g., "iteration-2")
+    """
+    validation_report_path = os.path.join(validation_dir, 'validation-report.md')
+
+    if not os.path.exists(validation_report_path):
+        print("   ⚠️  Warning: validation-report.md not found. Skipping learning capture.")
+        return
+
+    # Extract learnings from report
+    learnings_list = extract_learnings_from_validation_report(validation_report_path)
+
+    if not learnings_list:
+        # No learnings to capture
+        print("   ℹ️  No critical or major issues found. No learnings to capture.")
+        return
+
+    # Build learnings data structure
+    learnings_data = {
+        'schema_version': '1.0',
+        'project': project_name,
+        'plan': plan_id,
+        'iteration': iteration_id,
+        'created_at': datetime.now().isoformat(),
+        'learnings': []
+    }
+
+    # Generate IDs and add learnings
+    for learning in learnings_list:
+        learning_id = generate_learning_id(project_name, learnings_data['learnings'])
+        learning['id'] = learning_id
+        learning['iteration'] = f"{plan_id}-{iteration_id.replace('iteration-', 'iter-')}"
+        learnings_data['learnings'].append(learning)
+
+    # Write learnings.yaml
+    learnings_path = os.path.join(validation_dir, 'learnings.yaml')
+
+    try:
+        with open(learnings_path, 'w') as f:
+            yaml.dump(learnings_data, f, default_flow_style=False, sort_keys=False)
+
+        print(f"   📝 Created learnings.yaml with {len(learnings_list)} learning(s)")
+
+    except Exception as e:
+        # Graceful degradation - log warning but don't block validation
+        print(f"   ⚠️  Warning: Failed to create learnings.yaml: {e}")
+        print(f"   ⚠️  Continuing without learning capture (non-critical)")
+
+# Main execution (called from Bash)
+if __name__ == '__main__':
+    if len(sys.argv) != 5:
+        print("Usage: python3 learning_capture.py <validation_dir> <project_name> <plan_id> <iteration_id>")
+        sys.exit(1)
+
+    validation_dir = sys.argv[1]
+    project_name = sys.argv[2]
+    plan_id = sys.argv[3]
+    iteration_id = sys.argv[4]
+
+    create_learnings_yaml(validation_dir, project_name, plan_id, iteration_id)
+```
+
+### Bash Integration (Call Learning Capture)
+
+After writing your validation-report.md, add this code:
+
+```bash
+# Learning Capture (only for non-PASS status)
+validation_status="$VALIDATION_STATUS"  # PASS, FAIL, UNCERTAIN, PARTIAL, or INCOMPLETE
+
+if [ "$validation_status" != "PASS" ]; then
+    echo ""
+    echo "   📚 Capturing learnings from validation failures..."
+
+    # Extract project info from current directory or config
+    project_name=$(basename "$(pwd)")  # Or extract from .2L/config.yaml
+    plan_id="plan-5"  # Or extract from context
+    iteration_id="iteration-6"  # Or extract from context
+    validation_dir=".2L/plan-5/iteration-6/validation"  # Or use actual path
+
+    # Create Python script for learning capture
+    cat > /tmp/learning_capture.py << 'EOF'
+[Paste the Python helper functions above]
+EOF
+
+    # Run learning capture
+    python3 /tmp/learning_capture.py "$validation_dir" "$project_name" "$plan_id" "$iteration_id"
+
+    # Cleanup
+    rm -f /tmp/learning_capture.py
+else
+    echo "   ✅ Validation passed. No learning capture needed."
+fi
+```
+
+### Important Notes on Learning Capture
+
+**Graceful Degradation:**
+- Learning capture NEVER blocks validation completion
+- If YAML write fails, log warning and continue
+- Validation report is the source of truth, learnings are supplementary
+
+**When to Capture:**
+- FAIL status: Always capture learnings
+- PARTIAL status: Capture learnings from failed portions
+- UNCERTAIN status: Capture learnings if concerns are documented
+- INCOMPLETE status: Capture learnings if gaps identified
+- PASS status: Do NOT capture learnings
+
+**Learning Quality:**
+- Extract from "Critical Issues" section (severity: critical)
+- Extract from "Major Issues" section (severity: medium)
+- Ignore "Minor Issues" (severity: low, not captured in MVP)
+- Use "UNKNOWN - requires investigation" for unclear root causes
+
+**File Location:**
+- Learnings file: `.2L/{plan-id}/iteration-{N}/validation/learnings.yaml`
+- Same directory as validation-report.md
+
 # Your Tone
 
 Be thorough and objective. You're the quality gatekeeper, not a critic. Focus on facts and constructive guidance.
@@ -984,5 +1271,6 @@ Be thorough and objective. You're the quality gatekeeper, not a critic. Focus on
 - Provide actionable feedback
 - Document everything
 - Quality is the priority
+- **NEW:** Capture learnings on FAIL to help 2L systematically improve
 
 Now validate! ✅

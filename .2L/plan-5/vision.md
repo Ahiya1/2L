@@ -73,14 +73,17 @@
      - [ ] Track learning status: IDENTIFIED → PLANNED → IMPLEMENTED → VERIFIED
 
 4. **`/2l-improve` Command**
-   - Description: Trigger self-improvement orchestration based on accumulated learnings
-   - User story: As Ahiya, I want to run `/2l-improve` to have 2L improve itself based on what it learned
+   - Description: Automated self-improvement workflow - aggregates learnings, detects patterns, auto-generates vision, and orchestrates improvements with confirmation
+   - User story: As Ahiya, I want 2L to improve itself based on patterns from past projects without requiring manual vision creation (data-driven, not conversation-driven)
    - Acceptance criteria:
-     - [ ] Aggregates learnings from all Prod/ projects
-     - [ ] Generates vision.md for 2L improvements
-     - [ ] Triggers `/2l-mvp` in meditation space (~/Ahiya/2L)
-     - [ ] 2L modifies its own agents/commands in place
-     - [ ] Changes are immediately live via symlinks
+     - [ ] Aggregates learnings from all Prod/**/.2L/learnings.yaml files
+     - [ ] Detects recurring patterns (issues + solutions) across projects
+     - [ ] Auto-generates vision.md from top 2-3 high-impact patterns
+     - [ ] Presents proposed improvements with severity and affected files
+     - [ ] Shows confirmation prompt: "Proceed with /2l-mvp? [Y/n]"
+     - [ ] On confirmation, automatically runs /2l-mvp in meditation space
+     - [ ] Manual override available: /2l-improve --manual (shows patterns, waits for /2l-vision)
+     - [ ] Changes are immediately live via symlinks when implemented
 
 ### Should-Have (Post-MVP)
 
@@ -90,9 +93,9 @@
 
 ### Could-Have (Future)
 
-1. **Automatic Improvement Application** - `/2l-improve --auto` runs without human confirmation
-2. **Learning Query Interface** - `/2l-learnings grep "validation"` to find related insights
-3. **Cross-Project Analytics** - "SplitEasy and ai-mafia both struggled with integration zones - systemic issue?"
+1. **Learning Query Interface** - `/2l-learnings grep "validation"` to find related insights
+2. **Cross-Project Analytics Dashboard** - Visual analysis: "SplitEasy and ai-mafia both struggled with integration zones - systemic issue?"
+3. **Learning Impact Tracking** - Measure before/after metrics when improvements are implemented
 
 ---
 
@@ -136,19 +139,25 @@
 1. User runs `/2l-improve` from `~/Ahiya/2L/`
 2. Command scans `Prod/**/.2L/learnings.yaml` files
 3. Aggregates into `.2L/global-learnings.yaml`
-4. Analyzes patterns (e.g., "grep validation failed in 3 projects")
-5. Generates vision.md for improvements
-6. User reviews vision, runs `/2l-mvp`
-7. 2L orchestrates improvements to itself
-8. Changes committed and pushed to GitHub
+4. Detects patterns and ranks by impact (e.g., "grep validation failed in 3 projects - HIGH severity")
+5. Auto-generates vision.md from top 2-3 patterns (data becomes requirements)
+6. Displays proposed changes with affected files
+7. Asks: "Proceed with /2l-mvp? [Y/n]"
+8. If confirmed: Automatically runs `/2l-mvp` in meditation space
+9. 2L orchestrates improvements to itself (modifies agents/commands)
+10. Changes committed and pushed to GitHub
+11. Next orchestration uses improved system (via symlinks)
 
 **Edge cases:**
-- No learnings found: Inform user "No new learnings since last improvement"
-- Conflicting learnings: Present both to vision, let planner decide
+- No new learnings since last run: "No patterns detected. System is stable."
+- Too many patterns (>5): Prioritize by severity×occurrences, implement top 3
+- User declines (n): Vision saved for review, suggests `/2l-vision` for manual refinement
+- Manual mode (`/2l-improve --manual`): Shows patterns, waits for user to run `/2l-vision`
 
 **Error handling:**
-- Git conflicts during self-modification: Abort, notify user to resolve manually
-- Symlink broken: Cannot modify running system, fail gracefully
+- Git conflicts during self-modification: Abort orchestration, notify user to resolve manually
+- Symlink broken: Cannot modify running system, fail with clear message
+- Vision generation fails: Fall back to manual mode, suggest `/2l-vision`
 
 ---
 
@@ -217,10 +226,10 @@
 
 **Explicitly not included in MVP:**
 - Full meta-analyzer agent (Phase 2 feature)
-- Automated learning application (requires human review in MVP)
 - Learning UI/dashboard (CLI only for MVP)
 - Learning versioning/history (single global-learnings.yaml for now)
 - Cross-repository learning aggregation (only projects in Prod/ for MVP)
+- Learning impact metrics (before/after comparison)
 
 **Why:** Focus on closing the reflection loop first. Advanced analytics and automation come after proving the core concept.
 
@@ -232,7 +241,7 @@
 2. Symlinks work correctly on target system (Linux/macOS)
 3. Projects in `Prod/` directory all have `.2L/` structure
 4. Healing agent can be spawned multiple times per iteration
-5. User reviews vision before running `/2l-mvp` for self-improvement
+5. Learnings data is sufficient to auto-generate actionable vision (no human conversation needed)
 
 ---
 
@@ -240,8 +249,8 @@
 
 1. Should learning capture happen on PASS validations too (to capture what worked)?
 2. How many healing rounds before escalating to user? (Currently: 2 max)
-3. Should `/2l-improve` auto-generate vision or require user conversation?
-4. What's the format for learning IDs? (project-YYYYMMDD-NNN? UUID?)
+3. What's the format for learning IDs? (project-YYYYMMDD-NNN? UUID?)
+4. Should `/2l-improve` support selective pattern implementation? ("Fix #1 and #3, skip #2")
 
 ---
 
@@ -279,6 +288,80 @@ The `~/Ahiya/2L/` directory serves dual purpose:
 ```
 
 When 2L modifies `~/Ahiya/2L/agents/2l-validator.md` during self-improvement, the change is immediately live in `~/.claude/agents/2l-validator.md`.
+
+### Two Vision Workflows: Human-Driven vs. Data-Driven
+
+2L supports two distinct workflows for creating visions, each optimized for its use case:
+
+**Human-Driven Vision (`/2l-vision`) - Building NEW Projects**
+
+```bash
+Use case: Creating something new (ghstats, SplitEasy, ai-mafia)
+Input: Human intent and creativity
+Process: Interactive conversation
+  - "What problem are you solving?"
+  - "Who are the users?"
+  - "What are the must-have features?"
+Output: vision.md (from human imagination)
+Next: /2l-mvp implements the vision
+```
+
+**When to use:** You have an idea but no data. Vision comes from your head.
+
+---
+
+**Data-Driven Vision (`/2l-improve`) - Improving 2L ITSELF**
+
+```bash
+Use case: Self-improvement based on learnings
+Input: Accumulated learnings from past projects
+Process: Automated analysis
+  - Scans Prod/**/.2L/learnings.yaml
+  - Detects recurring patterns
+  - Ranks by severity × occurrences
+  - Auto-generates vision from top patterns
+Output: vision.md (from data analysis)
+Confirmation: "Proceed with /2l-mvp? [Y/n]"
+Next: Automatically runs /2l-mvp (if confirmed)
+```
+
+**When to use:** You have data (learnings). The patterns ARE the requirements.
+
+---
+
+**Why This Distinction Matters:**
+
+For new projects, conversation is essential:
+- No existing data
+- Requirements emerge through exploration
+- Human creativity drives the vision
+
+For self-improvement, conversation is redundant:
+- Learnings contain: issue, root_cause, solution, affected_files
+- Data is already structured requirements
+- Vision writes itself from the patterns
+
+**Example:**
+
+```
+Learning says:
+  issue: "Grep pattern '{.*}' matched CSS braces"
+  root_cause: "Validation pattern too broad"
+  solution: "Use '{[A-Z_]+}' for placeholders only"
+  affected_files: ["commands/2l-dashboard.md"]
+
+Vision auto-generated:
+  Feature: Fix grep validation pattern
+  Description: [from root_cause]
+  Solution: [from solution]
+  Files to modify: [from affected_files]
+
+No conversation needed - data contains full spec.
+```
+
+This design respects the source of truth:
+- **Human creativity** → `/2l-vision` (conversation reveals requirements)
+- **System data** → `/2l-improve` (learnings are requirements)
 
 ### Learning File Format
 

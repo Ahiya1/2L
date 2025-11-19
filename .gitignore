@@ -1,0 +1,15 @@
+# Node modules in Prod projects
+Prod/**/node_modules/
+Prod/**/.next/
+Prod/**/dist/
+Prod/**/.env.local
+Prod/**/.env
+
+# Temporary files
+*.backup.*
+.DS_Store
+.claude/
+
+# Keep .2L directories (learning history)
+!.2L/
+!Prod/**/.2L/

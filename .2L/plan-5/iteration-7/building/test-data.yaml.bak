@@ -1,0 +1,96 @@
+# Test Data for /2l-improve Integration Testing
+# This file contains synthetic global learnings to test pattern detection
+
+schema_version: "1.0"
+aggregated_at: "2025-11-19T16:00:00Z"
+total_projects: 3
+total_learnings: 5
+
+patterns:
+  # Pattern 1: IDENTIFIED, high impact (critical + 3 occurrences + multi-project)
+  - pattern_id: "PATTERN-001"
+    name: "TypeScript path resolution failures"
+    occurrences: 3
+    projects: ["wealth", "ai-mafia", "ShipLog"]
+    severity: "critical"
+    root_cause: "tsconfig.json paths not configured before builders create imports"
+    proposed_solution: "Add tsconfig.json validation to planner phase"
+    status: "IDENTIFIED"
+    discovered_in: "plan-3-iter-2"
+    discovered_at: "2025-11-19T15:30:00Z"
+    source_learnings: ["wealth-20251119-001", "ai-mafia-20251015-003", "shiplog-20251018-002"]
+    iteration_metadata:
+      duration_seconds: 3240
+      healing_rounds: 1
+      files_modified: 8
+
+  # Pattern 2: IDENTIFIED, medium impact (medium + 2 occurrences + multi-project)
+  - pattern_id: "PATTERN-002"
+    name: "Duplicate file creation across builders"
+    occurrences: 2
+    projects: ["wealth", "ai-mafia"]
+    severity: "medium"
+    root_cause: "Builders don't check if file exists before creation"
+    proposed_solution: "Add file existence check in builder agent prompt"
+    status: "IDENTIFIED"
+    discovered_in: "plan-4-iter-1"
+    discovered_at: "2025-11-19T14:00:00Z"
+    source_learnings: ["wealth-20251119-002", "ai-mafia-20251015-005"]
+    iteration_metadata:
+      duration_seconds: 2100
+      healing_rounds: 2
+      files_modified: 5
+
+  # Pattern 3: ALREADY IMPLEMENTED (should be filtered out)
+  - pattern_id: "PATTERN-003"
+    name: "Missing error handling in validation phase"
+    occurrences: 4
+    projects: ["wealth", "ai-mafia", "ShipLog", "2L-test"]
+    severity: "critical"
+    root_cause: "Validators don't catch runtime exceptions"
+    proposed_solution: "Wrap all validator checks in try-catch blocks"
+    status: "IMPLEMENTED"  # Should NOT be detected
+    discovered_in: "plan-2-iter-3"
+    discovered_at: "2025-11-15T10:00:00Z"
+    source_learnings: ["wealth-20251115-001", "ai-mafia-20251010-001"]
+    iteration_metadata:
+      duration_seconds: 4200
+      healing_rounds: 3
+      files_modified: 12
+    implemented_in_plan: "plan-3"
+    implemented_at: "2025-11-17T12:00:00Z"
+    vision_file: ".2L/plan-3/vision.md"
+
+  # Pattern 4: IDENTIFIED but below occurrence threshold (only 1 occurrence)
+  - pattern_id: "PATTERN-004"
+    name: "Incorrect git branch in deployment"
+    occurrences: 1  # Below threshold
+    projects: ["ShipLog"]
+    severity: "critical"
+    root_cause: "Deployment script hardcodes main branch"
+    proposed_solution: "Make branch configurable"
+    status: "IDENTIFIED"
+    discovered_in: "plan-4-iter-2"
+    discovered_at: "2025-11-19T16:00:00Z"
+    source_learnings: ["shiplog-20251119-003"]
+    iteration_metadata:
+      duration_seconds: 1800
+      healing_rounds: 0
+      files_modified: 3
+
+  # Pattern 5: IDENTIFIED, low impact (low severity + 2 occurrences)
+  - pattern_id: "PATTERN-005"
+    name: "Minor formatting inconsistencies"
+    occurrences: 2
+    projects: ["wealth", "ShipLog"]
+    severity: "low"  # Low severity
+    root_cause: "Different builders use different code formatting"
+    proposed_solution: "Add pre-commit formatting hook"
+    status: "IDENTIFIED"
+    discovered_in: "plan-4-iter-3"
+    discovered_at: "2025-11-19T17:00:00Z"
+    source_learnings: ["wealth-20251119-005", "shiplog-20251119-006"]
+    iteration_metadata:
+      duration_seconds: 900
+      healing_rounds: 0
+      files_modified: 2

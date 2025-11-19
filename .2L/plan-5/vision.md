@@ -63,25 +63,44 @@
      - [ ] Only mark iteration COMPLETE if re-validation PASSES
      - [ ] Log re-validation events to events.jsonl
 
-3. **Learning Aggregation System**
-   - Description: Scan all `.2L/` directories across projects and merge learnings into global knowledge base
-   - User story: As 2L, I want to aggregate all learnings from past projects so I can identify patterns
+3. **Learning Aggregation System with Status Tracking**
+   - Description: Scan all `.2L/` directories, merge learnings, and track status lifecycle to prevent duplicate fixes
+   - User story: As 2L, I want to aggregate learnings and track which ones have been fixed so I don't try to fix the same issue repeatedly
    - Acceptance criteria:
      - [ ] Scan `Prod/**/.2L/learnings.yaml` files
      - [ ] Merge into `.2L/global-learnings.yaml` with project attribution
-     - [ ] Detect duplicate learnings (same issue across projects)
-     - [ ] Track learning status: IDENTIFIED → PLANNED → IMPLEMENTED → VERIFIED
+     - [ ] Detect duplicate learnings (same issue across projects, merge into single pattern)
+     - [ ] Track learning status: IDENTIFIED → IMPLEMENTED → VERIFIED
+     - [ ] New learnings default to status: IDENTIFIED
+     - [ ] After `/2l-improve` implements fix: Update status to IMPLEMENTED, add implemented_in field
+     - [ ] After validation passes on fixed issue: Update status to VERIFIED
+     - [ ] `/2l-improve` only shows learnings with status: IDENTIFIED (skip already fixed)
 
-4. **`/2l-improve` Command**
+4. **Orchestrator Reflection (in `/2l-mvp`)**
+   - Description: Add reflection logic to orchestrator at end of each iteration - not a separate agent, just orchestrator code
+   - User story: As the orchestrator, I want to aggregate iteration learnings and update global knowledge base after each iteration completes
+   - Acceptance criteria:
+     - [ ] After validation PASSES (including after healing), before git commit
+     - [ ] If learnings.yaml exists in iteration directory, merge into global-learnings.yaml
+     - [ ] Mark new learnings with status: IDENTIFIED, add discovered_in field (plan-N-iter-M)
+     - [ ] Add iteration metadata to learnings (duration, healing_rounds, files_modified)
+     - [ ] No new agent spawned - just orchestrator logic
+     - [ ] Happens automatically every iteration (not a command)
+     - [ ] Log event: "Reflection complete - N learnings added to global knowledge base"
+
+5. **`/2l-improve` Command**
    - Description: Automated self-improvement workflow - aggregates learnings, detects patterns, auto-generates vision, and orchestrates improvements with confirmation
    - User story: As Ahiya, I want 2L to improve itself based on patterns from past projects without requiring manual vision creation (data-driven, not conversation-driven)
    - Acceptance criteria:
-     - [ ] Aggregates learnings from all Prod/**/.2L/learnings.yaml files
-     - [ ] Detects recurring patterns (issues + solutions) across projects
+     - [ ] Reads `.2L/global-learnings.yaml` (already aggregated by orchestrator)
+     - [ ] Filters to only show learnings with status: IDENTIFIED (skip IMPLEMENTED/VERIFIED)
+     - [ ] Detects recurring patterns (same issue across multiple projects)
+     - [ ] Ranks by impact (severity × occurrences)
      - [ ] Auto-generates vision.md from top 2-3 high-impact patterns
      - [ ] Presents proposed improvements with severity and affected files
      - [ ] Shows confirmation prompt: "Proceed with /2l-mvp? [Y/n]"
      - [ ] On confirmation, automatically runs /2l-mvp in meditation space
+     - [ ] After /2l-mvp completes, marks learnings as status: IMPLEMENTED
      - [ ] Manual override available: /2l-improve --manual (shows patterns, waits for /2l-vision)
      - [ ] Changes are immediately live via symlinks when implemented
 
@@ -165,17 +184,21 @@
 
 **Key entities:**
 
-1. **Learning**
+1. **Learning (Per-iteration)**
    - Fields: id, iteration, category (validation|integration|healing), severity (critical|medium|low), issue, root_cause, solution, recurrence_risk, affected_files
+   - Metadata: duration_seconds, healing_rounds, files_modified (added by orchestrator)
    - Relationships: Belongs to project, belongs to iteration
 
 2. **Global Learning Pattern**
-   - Fields: pattern_id, name, occurrences, projects[], severity, root_cause, proposed_solution, status (IDENTIFIED|PLANNED|IMPLEMENTED|VERIFIED)
-   - Relationships: Aggregates multiple Learning entries
+   - Fields: pattern_id, name, occurrences, projects[], severity, root_cause, proposed_solution
+   - Status: IDENTIFIED (new) | IMPLEMENTED (fixed) | VERIFIED (confirmed working)
+   - Tracking: discovered_in (plan-N-iter-M), implemented_in (plan-N-iter-M), verified_at (timestamp)
+   - Relationships: Aggregates multiple Learning entries from different projects
 
 3. **Iteration**
    - Fields: iteration_id, status, learnings_file (path to learnings.yaml)
    - Relationships: Has many Learnings
+   - Lifecycle: At iteration end, orchestrator merges learnings into global-learnings.yaml
 
 ---
 
@@ -390,6 +413,7 @@ total_projects: 5
 total_learnings: 23
 
 patterns:
+  # New pattern - ready for /2l-improve
   - pattern_id: PATTERN-001
     name: "Integration re-validation gap"
     occurrences: 3
@@ -398,15 +422,34 @@ patterns:
     root_cause: "Healing runs but success not verified"
     proposed_solution: "Add validation checkpoint after healing"
     status: IDENTIFIED
+    discovered_in: plan-3-iter-2
+    discovered_at: 2025-11-10T08:47:00Z
 
+  # Fixed but not yet verified
   - pattern_id: PATTERN-002
     name: "Grep pattern validation failures"
     occurrences: 2
     projects: [ghstats, SplitEasy]
     severity: medium
     root_cause: "Generic regex matches too broadly"
-    proposed_solution: "Use specific patterns for placeholder validation"
-    status: IDENTIFIED
+    proposed_solution: "Use '{[A-Z_]+}' for placeholder validation"
+    status: IMPLEMENTED
+    discovered_in: plan-1-iter-1
+    implemented_in: plan-5-iter-1
+    implemented_at: 2025-11-19T15:30:00Z
+
+  # Confirmed working - won't show in /2l-improve
+  - pattern_id: PATTERN-003
+    name: "Parallel explorers reduce blind spots"
+    occurrences: 5
+    projects: [ALL]
+    severity: low
+    type: success_pattern
+    insight: "4 master explorers consistently identify different architectural concerns"
+    recommendation: "Keep current parallel exploration strategy"
+    status: VERIFIED
+    discovered_in: plan-2-iter-1
+    verified_at: 2025-11-08T18:00:00Z
 ```
 
 ---

@@ -1,15 +1,7 @@
-# Node modules in Prod projects
-Prod/**/node_modules/
-Prod/**/.next/
-Prod/**/dist/
-Prod/**/.env.local
-Prod/**/.env
+# Exclude entire Prod folder (projects have their own repos)
+Prod/
 
 # Temporary files
 *.backup.*
 .DS_Store
 .claude/
-
-# Keep .2L directories (learning history)
-!.2L/
-!Prod/**/.2L/

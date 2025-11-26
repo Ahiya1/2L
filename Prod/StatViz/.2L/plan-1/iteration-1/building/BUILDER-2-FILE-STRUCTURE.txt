@@ -1,0 +1,97 @@
+BUILDER-2 FILE STRUCTURE
+========================
+
+StatViz/
+├── lib/
+│   ├── storage/                          [CREATED BY BUILDER-2]
+│   │   ├── interface.ts                  Storage abstraction interface
+│   │   ├── local.ts                      Local filesystem implementation
+│   │   ├── s3.ts                         S3 stub (future migration)
+│   │   └── index.ts                      Storage factory
+│   │
+│   ├── upload/                           [CREATED BY BUILDER-2]
+│   │   ├── validator.ts                  File validation utilities
+│   │   └── handler.ts                    Atomic upload handler
+│   │
+│   ├── utils/                            [CREATED BY BUILDER-2]
+│   │   ├── password.ts                   Password generation/hashing
+│   │   └── nanoid.ts                     Project ID generation
+│   │
+│   ├── env.ts                            [PLACEHOLDER for Builder-1]
+│   └── db/
+│       └── client.ts                     [PLACEHOLDER for Builder-1]
+│
+├── app/
+│   └── api/
+│       └── admin/
+│           └── projects/
+│               └── route.ts              [POST implemented by Builder-2]
+│
+├── .2L/
+│   └── plan-1/
+│       └── iteration-1/
+│           └── building/
+│               ├── builder-2-report.md           Comprehensive implementation report
+│               ├── BUILDER-2-README.md           Implementation guide
+│               ├── BUILDER-2-SUMMARY.md          Quick summary
+│               └── BUILDER-2-FILE-STRUCTURE.txt  This file
+│
+├── package.json                          Dependencies already configured
+├── tsconfig.json                         TypeScript config (strict mode)
+├── next.config.mjs                       Next.js config (50MB body limit)
+└── .env.example                          Environment variable template
+
+Key Files Summary:
+------------------
+
+BUILDER-2 CREATED (9 implementation files):
+  ✅ lib/storage/interface.ts
+  ✅ lib/storage/local.ts  
+  ✅ lib/storage/s3.ts
+  ✅ lib/storage/index.ts
+  ✅ lib/upload/validator.ts
+  ✅ lib/upload/handler.ts
+  ✅ lib/utils/password.ts
+  ✅ lib/utils/nanoid.ts
+  ✅ app/api/admin/projects/route.ts (POST method)
+
+PLACEHOLDERS FOR BUILDER-1 (2 files):
+  ⏳ lib/env.ts
+  ⏳ lib/db/client.ts
+
+DOCUMENTATION (4 files):
+  ✅ builder-2-report.md
+  ✅ BUILDER-2-README.md
+  ✅ BUILDER-2-SUMMARY.md
+  ✅ BUILDER-2-FILE-STRUCTURE.txt
+
+Total Files: 15 (9 implementation + 2 placeholders + 4 documentation)
+Total Lines of Code: ~1,200 (excluding comments and blank lines)
+
+Integration Points:
+-------------------
+
+EXPORTS (for other builders):
+  → fileStorage                    (lib/storage/index.ts)
+  → FileStorage interface          (lib/storage/interface.ts)
+  → createProjectAtomic()          (lib/upload/handler.ts)
+  → deleteProjectWithFiles()       (lib/upload/handler.ts)
+  → generatePassword()             (lib/utils/password.ts)
+  → hashPassword()                 (lib/utils/password.ts)
+  → generateProjectId()            (lib/utils/nanoid.ts)
+
+IMPORTS (from other builders):
+  ← env                            (lib/env.ts - Builder-1)
+  ← prisma                         (lib/db/client.ts - Builder-1)
+  ← requireAdminAuth()             (lib/auth/middleware.ts - Builder-1)
+
+Directory Purpose:
+------------------
+
+lib/storage/     - Storage abstraction (local/S3)
+lib/upload/      - File upload and validation
+lib/utils/       - Shared utilities (password, nanoid)
+lib/env.ts       - Environment validation (Builder-1)
+lib/db/          - Database client (Builder-1)
+
+Status: COMPLETE ✅

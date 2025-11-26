@@ -1,0 +1,365 @@
+plan_id: plan-1
+created_at: 2025-11-26T00:00:00Z
+status: PLANNED
+total_iterations: 3
+
+# Master Plan Strategy
+strategy: |
+  StatViz platform will be built in 3 iterations following a layered architectural approach:
+
+  1. **Foundation & Security (Iteration 1)**: Establish backend infrastructure with database,
+     file storage, authentication, and core APIs. This high-risk phase requires careful security
+     implementation before any UI is built.
+
+  2. **Admin Panel & Features (Iteration 2)**: Build admin interface for project creation,
+     management, and file uploads. Implement Hebrew RTL support and HTML validation.
+
+  3. **Student Access & Polish (Iteration 3)**: Create password-protected viewer with HTML
+     embedding, DOCX downloads, mobile optimization, and production deployment.
+
+  **Complexity Assessment**: COMPLEX (60-80 hours estimated)
+  - 8 core features with security-critical requirements
+  - Dual authentication patterns (admin JWT + project passwords)
+  - File handling up to 50MB with validation
+  - Hebrew RTL support across all UIs
+  - HTML iframe embedding with Plotly compatibility
+
+  **Key Risks Identified**:
+  - File upload security (XSS, virus scanning, atomicity)
+  - HTML iframe rendering on mobile devices
+  - Session management and timeout handling
+  - Hebrew RTL layout with mixed LTR/RTL content
+
+  **Technology Stack**:
+  - Frontend/Backend: Next.js 14+ (TypeScript, App Router)
+  - Database: PostgreSQL + Prisma ORM
+  - Storage: Local filesystem (MVP) → AWS S3 (future)
+  - Authentication: NextAuth.js (admin) + custom JWT (projects)
+  - Styling: Tailwind CSS with RTL support
+  - Deployment: Vercel (Israeli/European region)
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 1
+    name: "Foundation & File Infrastructure"
+    vision: "Establish secure backend foundation with database, file storage, admin authentication, and core APIs"
+    scope: |
+      **Backend-Heavy Foundational Work**
+
+      Database Setup:
+      - PostgreSQL schema with projects, admin_sessions, project_sessions tables
+      - Prisma ORM configuration and migrations
+      - Indexes on project_id, student_email, created_at
+      - Connection pooling setup
+
+      File Storage System:
+      - Local filesystem implementation (/uploads/{project_id}/)
+      - File validation (MIME type, size limit 50MB)
+      - Virus scanning (optional but recommended)
+      - Abstraction layer for future S3 migration
+      - File cleanup utilities
+
+      Admin Authentication:
+      - JWT token generation and verification
+      - Password hashing with bcrypt (10 rounds)
+      - Login endpoint POST /api/admin/login
+      - Session management (30 min timeout)
+      - Rate limiting (5 attempts per 15 min)
+
+      Core APIs:
+      - POST /api/admin/projects (multipart upload)
+      - GET /api/admin/projects (list with filtering)
+      - DELETE /api/admin/projects/:id
+      - POST /api/preview/:id/verify (password check)
+      - GET /api/preview/:id (project data)
+      - GET /api/download/:id (DOCX download)
+
+      Security Layer:
+      - HTTPS enforcement
+      - CSRF protection
+      - Input sanitization
+      - Error handling middleware
+      - Security headers (CSP preparation)
+
+      HTML Validation:
+      - Parse HTML for external resources
+      - Check for <link>, <script src>, <img src> tags
+      - Validate Plotly is embedded
+      - Return warnings (non-blocking)
+
+      Environment Configuration:
+      - .env setup (database URL, JWT secret, file storage path)
+      - Environment variable validation
+      - Development vs production config
+
+      **Success Criteria**:
+      - Admin can authenticate via API (Postman/curl testing)
+      - Files upload to storage successfully
+      - Database stores and retrieves project metadata
+      - Passwords hash and verify correctly
+      - HTML validation detects external dependencies
+      - All API endpoints return proper status codes
+      - No security vulnerabilities in authentication flow
+
+    status: PENDING
+    dependencies: []
+    estimated_hours: 20-25
+    risk_level: HIGH
+    critical_risks:
+      - File upload security vulnerabilities (XSS, malware)
+      - Authentication implementation bugs
+      - Database schema design requiring migration later
+      - File storage atomicity (rollback on failure)
+
+  - iteration_id: 2
+    global_iteration: 2
+    name: "Admin Panel & Project Creation"
+    vision: "Build admin interface for creating and managing projects with Hebrew RTL support"
+    scope: |
+      **Admin-Facing Features**
+
+      Admin Dashboard UI:
+      - Next.js page /admin/dashboard
+      - Login page /admin with form validation
+      - Project list view (table or card grid)
+      - Header with logout button
+      - Empty state ("No projects yet")
+      - Loading states and error displays
+
+      Project Creation Flow:
+      - "Create New Project" button
+      - Modal form with fields:
+        * Project name (Hebrew, max 500 chars)
+        * Student name (Hebrew, max 255 chars)
+        * Student email (LTR, validated format)
+        * Research topic (Hebrew, textarea)
+        * DOCX file upload (drag-drop or picker)
+        * HTML file upload (drag-drop or picker)
+        * Password (optional, auto-generate if empty)
+      - Client-side validation (file type, size, required fields)
+      - Upload progress bar (XMLHttpRequest with progress tracking)
+      - Success modal with link + password copy buttons
+      - Error recovery (retry on failure)
+
+      Project Management:
+      - Project list with metadata (name, student, date, views)
+      - Actions per project:
+        * View (opens /preview/:id in new tab)
+        * Copy Link (clipboard API)
+        * Delete (confirmation modal)
+      - Search/filter by student name (optional MVP)
+      - Sort by creation date (newest first)
+      - Pagination if >50 projects (optional MVP)
+
+      Hebrew RTL Implementation:
+      - Global RTL CSS (dir="rtl" on html)
+      - Tailwind CSS RTL utilities
+      - Hebrew fonts (Rubik, Heebo, or Noto Sans Hebrew)
+      - Mixed content handling (Hebrew text + English emails)
+      - Form inputs with proper direction
+      - Icon flipping for RTL
+      - Button order (cancel right, submit left)
+
+      HTML Validation UI:
+      - Display warnings if external resources detected
+      - "Upload Anyway" option
+      - Validation feedback during upload
+
+      Integration with Iteration 1:
+      - Call authentication APIs
+      - Use file upload endpoints
+      - Query database via APIs
+      - Handle session tokens
+
+      **Success Criteria**:
+      - Ahiya can log in and see dashboard
+      - Project creation completes in <3 minutes
+      - Files upload with visible progress
+      - Success modal displays link and password
+      - Copy-to-clipboard works
+      - Project list shows all projects correctly
+      - Delete removes files and database record
+      - Hebrew text displays correctly (RTL)
+      - No layout issues with mixed Hebrew/English
+      - Form validation prevents invalid submissions
+
+    status: PENDING
+    dependencies:
+      - iteration_1
+    imports_from_previous:
+      - Database schema (projects table)
+      - File storage utilities
+      - Authentication middleware
+      - API endpoints
+      - Password hashing functions
+    estimated_hours: 25-30
+    risk_level: MEDIUM
+    critical_risks:
+      - File upload UX for 50MB files (timeout, progress)
+      - Hebrew RTL layout bugs with mixed content
+      - HTML validation false positives
+      - Client-side/server-side validation mismatches
+
+  - iteration_id: 3
+    global_iteration: 3
+    name: "Student Access & Project Viewer"
+    vision: "Enable password-protected student access to interactive reports with mobile optimization"
+    scope: |
+      **Student-Facing Features**
+
+      Password Prompt Page:
+      - Route: /preview/:project_id
+      - Clean, minimal Hebrew UI
+      - Single password input field
+      - Large submit button
+      - Hebrew error messages ("סיסמה שגויה. אנא נסה שוב")
+      - Rate limiting feedback (attempts remaining)
+      - Loading state during verification
+      - Session check (skip if valid token exists)
+
+      Session Management:
+      - JWT token generation on successful password
+      - httpOnly cookie storage (secure, sameSite)
+      - 24-hour expiration OR browser close
+      - Session validation middleware
+      - Graceful session timeout (redirect to password)
+      - No refresh token (re-authentication acceptable)
+
+      Project Viewer Page:
+      - Route: /preview/:project_id (after authentication)
+      - Display project metadata (name, student, topic)
+      - Embedded HTML report in iframe
+      - Iframe sandbox attributes (allow-scripts, allow-same-origin)
+      - Dynamic iframe height adjustment (postMessage)
+      - DOCX download button (prominent, fixed position)
+      - View count increment on first access
+      - Last accessed timestamp update
+
+      HTML Rendering Strategy:
+      - Serve HTML via /api/html/:project_id endpoint
+      - Validate session token before serving
+      - Iframe with proper CSP headers
+      - Ensure Plotly graphs render correctly
+      - Test with actual Claude-generated HTML
+      - Fallback: "Open in new tab" if iframe fails
+
+      DOCX Download Flow:
+      - GET /api/download/:project_id
+      - Session token validation
+      - Serve file with proper headers
+      - Content-Disposition: attachment
+      - Filename: findings_hebrew.docx
+      - Download progress feedback (optional)
+
+      Mobile Optimization:
+      - Responsive design for 320px-768px screens
+      - Touch-friendly UI (44px+ tap targets)
+      - Full-width iframe on mobile
+      - Fixed-bottom download button
+      - Loading skeleton for HTML
+      - Performance optimization (lazy loading)
+      - Test on real devices (iPhone, Android)
+
+      Production Deployment:
+      - Vercel deployment configuration
+      - Environment variables setup
+      - PostgreSQL connection (Vercel Postgres or Supabase)
+      - SSL certificate (automatic via Vercel)
+      - Domain setup (statviz.xyz)
+      - Israeli/European region selection
+
+      Security Hardening:
+      - Rate limiting on password endpoint
+      - Content Security Policy headers
+      - XSS protection in iframe
+      - HTTPS-only cookies
+      - Input sanitization
+      - Error monitoring (Sentry integration)
+
+      Documentation:
+      - Admin user guide (project creation)
+      - Student access guide (Hebrew)
+      - Troubleshooting FAQ
+      - Deployment instructions
+      - API documentation (future integrations)
+
+      Testing & QA:
+      - Manual testing checklist
+      - Cross-browser testing (Chrome, Firefox, Safari, Edge)
+      - Mobile device testing (real devices)
+      - Hebrew RTL visual QA
+      - Edge case validation (session timeout, project not found)
+      - Performance testing (50+ projects, large HTML files)
+      - Security audit (authentication, file access)
+
+      **Success Criteria**:
+      - Student can access project with password
+      - HTML report renders fully in iframe
+      - Plotly graphs are interactive (zoom, pan, hover)
+      - DOCX downloads successfully
+      - Session persists across page refreshes
+      - Session expires after 24 hours
+      - Mobile view is fully functional (320px+)
+      - Hebrew error messages display correctly
+      - >95% success rate for password → report flow
+      - Platform deployed to statviz.xyz
+      - HTTPS working, no security warnings
+      - Performance acceptable with 50+ projects
+
+    status: PENDING
+    dependencies:
+      - iteration_1
+      - iteration_2
+    imports_from_previous:
+      - All APIs from iteration 1
+      - Database schema and connections
+      - File storage utilities
+      - Authentication patterns
+      - Hebrew RTL components from iteration 2
+    estimated_hours: 25-30
+    risk_level: MEDIUM
+    critical_risks:
+      - HTML iframe rendering on mobile (highest risk)
+      - Plotly touch interactions on mobile devices
+      - Session management edge cases (timeout, expiration)
+      - Mobile performance with large HTML files (5-10MB)
+      - Deployment issues (environment config, database connection)
+
+# Global Configuration
+github_repo: null  # Will be set during iteration execution
+project_name: StatViz
+description: Statistical Analysis Visualization & Reporting Platform
+
+# Technical Decisions
+decisions:
+  storage_strategy: "Start with local filesystem, migrate to S3 post-MVP"
+  password_storage: "Encrypt with AES-256 (key in env) for password recovery UX"
+  session_timeout_admin: "30 minutes"
+  session_timeout_student: "24 hours"
+  deployment_platform: "Vercel"
+  database_hosting: "Vercel Postgres or Supabase (free tier for MVP)"
+  rate_limiting_storage: "In-memory Map (MVP) → Redis (production)"
+  admin_panel_responsive: "Desktop-only for MVP (1280px+)"
+  student_viewer_responsive: "Mobile-first (320px+)"
+  html_validation: "Warning-only (non-blocking uploads)"
+  file_size_limit: "50 MB (configurable via environment)"
+
+# Success Metrics
+success_criteria:
+  performance:
+    - "Project creation in <3 minutes (including 50MB uploads)"
+    - "Password → report access in <5 seconds"
+    - "HTML report loads in <10 seconds on mobile (3G)"
+  reliability:
+    - ">95% success rate for password authentication"
+    - ">98% success rate for file downloads"
+    - ">99% platform uptime"
+  functionality:
+    - "100% Plotly graph features work in iframe"
+    - "Hebrew RTL displays correctly across all browsers"
+    - "Mobile responsiveness on 320px+ screens"
+  security:
+    - "No XSS vulnerabilities in HTML embedding"
+    - "Rate limiting prevents brute force (<5 attempts/15min)"
+    - "HTTPS-only in production"
+    - "Sessions expire correctly (timeout enforcement)"

@@ -1,0 +1,19 @@
+# StatViz 2L Configuration
+# Generated: 2025-11-26
+
+project_name: StatViz
+description: Statistical Analysis Visualization & Reporting Platform
+
+plans:
+  - plan_id: plan-1
+    status: PLANNED
+    created: 2025-11-26T00:00:00Z
+    vision_file: .2L/plan-1/vision.md
+    master_plan_file: .2L/plan-1/master-plan.yaml
+    description: MVP - Core platform with admin panel, project creation, and password-protected viewer
+    master_exploration:
+      num_explorers: 3
+      complexity_level: COMPLEX
+
+current_plan: plan-1
+global_iteration_counter: 0

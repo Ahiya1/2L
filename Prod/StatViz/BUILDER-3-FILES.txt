@@ -1,0 +1,212 @@
+Builder-3 File Structure
+========================
+
+StatViz/
+├── app/
+│   └── api/
+│       └── preview/
+│           └── [id]/
+│               ├── verify/
+│               │   └── route.ts          # POST - Password verification
+│               ├── html/
+│               │   └── route.ts          # GET - HTML content serving
+│               ├── download/
+│               │   └── route.ts          # GET - DOCX download
+│               └── route.ts              # GET - Project metadata
+│
+├── lib/
+│   ├── auth/
+│   │   ├── project.ts                    # Password verification & session management
+│   │   ├── middleware.ts                 # requireProjectAuth() function
+│   │   ├── admin.ts                      # [PLACEHOLDER] Builder-1 will replace
+│   │   └── __tests__/
+│   │       └── project.test.md           # Manual testing guide (14 tests)
+│   │
+│   ├── validation/
+│   │   └── schemas.ts                    # Zod validation schemas
+│   │
+│   ├── db/
+│   │   └── client.ts                     # [PLACEHOLDER] Builder-1 will replace
+│   │
+│   ├── security/
+│   │   └── rate-limiter.ts               # [PLACEHOLDER] Builder-1 will replace
+│   │
+│   ├── storage/
+│   │   ├── index.ts                      # [PLACEHOLDER] Builder-2 will replace
+│   │   ├── interface.ts                  # Storage interface definition
+│   │   ├── local.ts                      # [REFERENCE] Local storage example
+│   │   └── s3.ts                         # [REFERENCE] S3 storage stub
+│   │
+│   └── env.ts                            # [PLACEHOLDER] Builder-1 will replace
+│
+├── docs/
+│   ├── builder-3-api-reference.md        # Complete API documentation
+│   ├── builder-3-integration-guide.md    # Integration guide for other builders
+│   └── builder-3-flow-diagram.md         # Authentication flow diagrams
+│
+├── .2L/
+│   └── plan-1/
+│       └── iteration-1/
+│           └── building/
+│               └── builder-3-report.md   # Full builder report
+│
+├── BUILDER-3-SUMMARY.md                  # Quick summary
+├── BUILDER-3-INTEGRATION-CHECKLIST.md    # Integration checklist
+└── BUILDER-3-FILES.txt                   # This file
+
+
+File Count Summary
+==================
+
+IMPLEMENTATION FILES (7):
+  ✓ lib/auth/project.ts
+  ✓ lib/auth/middleware.ts
+  ✓ lib/validation/schemas.ts
+  ✓ app/api/preview/[id]/verify/route.ts
+  ✓ app/api/preview/[id]/route.ts
+  ✓ app/api/preview/[id]/html/route.ts
+  ✓ app/api/preview/[id]/download/route.ts
+
+DOCUMENTATION FILES (5):
+  ✓ docs/builder-3-api-reference.md
+  ✓ docs/builder-3-integration-guide.md
+  ✓ docs/builder-3-flow-diagram.md
+  ✓ lib/auth/__tests__/project.test.md
+  ✓ .2L/plan-1/iteration-1/building/builder-3-report.md
+
+QUICK REFERENCE FILES (2):
+  ✓ BUILDER-3-SUMMARY.md
+  ✓ BUILDER-3-INTEGRATION-CHECKLIST.md
+
+PLACEHOLDER FILES (5) - To be replaced:
+  ○ lib/db/client.ts           → Builder-1
+  ○ lib/env.ts                 → Builder-1
+  ○ lib/security/rate-limiter.ts → Builder-1
+  ○ lib/auth/admin.ts          → Builder-1
+  ○ lib/storage/index.ts       → Builder-2
+
+REFERENCE FILES (3) - For Builder-2:
+  ○ lib/storage/interface.ts
+  ○ lib/storage/local.ts
+  ○ lib/storage/s3.ts
+
+
+API Endpoints Created
+=====================
+
+POST   /api/preview/{id}/verify
+       - Verify project password
+       - Generate 24-hour session token
+       - Rate limited: 10 attempts/hour per project
+       - Returns: Session token in httpOnly cookie
+
+GET    /api/preview/{id}
+       - Get project metadata
+       - Requires: Valid session token
+       - Returns: Project name, student info, research topic
+
+GET    /api/preview/{id}/html
+       - Serve HTML report content
+       - Requires: Valid session token
+       - Returns: HTML file with text/html header
+
+GET    /api/preview/{id}/download
+       - Download DOCX findings file
+       - Requires: Valid session token
+       - Returns: DOCX file with attachment headers
+
+
+Key Features Implemented
+=========================
+
+✅ bcrypt password hashing (10 rounds)
+✅ JWT session tokens (24-hour expiry)
+✅ httpOnly cookies (XSS protection)
+✅ Rate limiting (10 attempts/hour per project)
+✅ Hebrew error messages
+✅ HTML and DOCX file serving
+✅ View count tracking
+✅ Last accessed timestamp
+✅ Soft delete support
+✅ Token-project binding (security)
+✅ Comprehensive error handling
+✅ Database session validation
+✅ Cache headers (1-hour cache)
+✅ Filename sanitization (Hebrew support)
+
+
+Dependencies
+============
+
+FROM BUILDER-1:
+  - lib/db/client.ts (Prisma client)
+  - lib/env.ts (Environment validation)
+  - lib/security/rate-limiter.ts (Rate limiting)
+  - lib/auth/admin.ts (Admin auth for middleware)
+  - prisma/schema.prisma (Database schema)
+
+FROM BUILDER-2:
+  - lib/storage/index.ts (File storage abstraction)
+
+EXTERNAL PACKAGES:
+  - bcryptjs (Password hashing)
+  - jsonwebtoken (JWT tokens)
+  - zod (Validation)
+  - @prisma/client (Database)
+  - rate-limiter-flexible (Rate limiting)
+
+
+Integration Notes
+=================
+
+MERGE CONFLICT:
+  lib/auth/middleware.ts
+    - Builder-1 adds requireAdminAuth()
+    - Builder-3 adds requireProjectAuth()
+    - Resolution: Keep both functions
+
+PLACEHOLDER REPLACEMENTS:
+  5 files need to be replaced during integration
+  (See PLACEHOLDER FILES section above)
+
+TESTING:
+  14 manual test cases in lib/auth/__tests__/project.test.md
+  Run after integration with Builder-1 and Builder-2
+
+SECURITY AUDIT:
+  7 security layers implemented
+  See docs/builder-3-flow-diagram.md for details
+
+
+Documentation Map
+=================
+
+START HERE:
+  BUILDER-3-SUMMARY.md
+    ↓
+  BUILDER-3-INTEGRATION-CHECKLIST.md (During integration)
+    ↓
+  .2L/plan-1/iteration-1/building/builder-3-report.md (Full details)
+
+API REFERENCE:
+  docs/builder-3-api-reference.md (Complete API docs)
+
+INTEGRATION:
+  docs/builder-3-integration-guide.md (Step-by-step integration)
+
+TESTING:
+  lib/auth/__tests__/project.test.md (14 test cases)
+
+UNDERSTANDING:
+  docs/builder-3-flow-diagram.md (Visual flows)
+
+
+Status
+======
+
+✅ COMPLETE
+✅ All success criteria met
+✅ Ready for integration
+✅ No blocking issues
+✅ Comprehensive documentation
+✅ 14 test cases ready

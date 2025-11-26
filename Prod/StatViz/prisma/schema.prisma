@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id             Int       @id @default(autoincrement())
+  projectId      String    @unique @db.VarChar(255)
+  projectName    String    @db.VarChar(500)
+  studentName    String    @db.VarChar(255)
+  studentEmail   String    @db.VarChar(255)
+  researchTopic  String    @db.Text
+  passwordHash   String    @db.VarChar(255)
+  createdAt      DateTime  @default(now())
+  createdBy      String    @default("ahiya") @db.VarChar(255)
+  docxUrl        String    @db.Text
+  htmlUrl        String    @db.Text
+  viewCount      Int       @default(0)
+  lastAccessed   DateTime?
+  deletedAt      DateTime? // Soft delete
+
+  @@index([projectId])
+  @@index([studentEmail])
+  @@index([createdAt])
+}
+
+model AdminSession {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.VarChar(500)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  ipAddress String?  @db.VarChar(45)
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model ProjectSession {
+  id        Int      @id @default(autoincrement())
+  projectId String   @db.VarChar(255)
+  token     String   @unique @db.VarChar(500)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([token])
+  @@index([projectId])
+}

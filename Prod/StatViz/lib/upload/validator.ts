@@ -62,6 +62,49 @@ export interface HtmlValidationResult {
   warnings: string[]
   hasPlotly: boolean
   isValid: boolean
+  errors?: string[]
+}
+
+export interface FileSizeValidationResult {
+  isValid: boolean
+  warning?: string
+  error?: string
+  sizeMB: number
+}
+
+/**
+ * Validate HTML file size for mobile performance
+ *
+ * - Files >10MB are blocked (exceeds reasonable mobile load time)
+ * - Files >5MB show warning (may load slowly on 3G)
+ * - Files <=5MB are optimal
+ *
+ * @param buffer - HTML file buffer
+ * @returns Validation result with size information and warnings/errors
+ */
+export function validateHtmlFileSize(buffer: Buffer): FileSizeValidationResult {
+  const sizeMB = buffer.length / 1024 / 1024
+
+  if (sizeMB > 10) {
+    return {
+      isValid: false,
+      error: `קובץ HTML גדול מדי (${sizeMB.toFixed(1)}MB). מקסימום: 10MB`,
+      sizeMB,
+    }
+  }
+
+  if (sizeMB > 5) {
+    return {
+      isValid: true,
+      warning: `קובץ גדול (${sizeMB.toFixed(1)}MB) - עשוי לטעון לאט במובייל (מומלץ <5MB)`,
+      sizeMB,
+    }
+  }
+
+  return {
+    isValid: true,
+    sizeMB,
+  }
 }
 
 /**
@@ -80,28 +123,39 @@ export interface HtmlValidationResult {
 export function validateHtmlSelfContained(htmlContent: string): HtmlValidationResult {
   const $ = cheerio.load(htmlContent)
   const warnings: string[] = []
+  const errors: string[] = []
 
-  // Check for external CSS
+  // Check for external CSS - ERROR (not warning)
   $('link[rel="stylesheet"]').each((i, el) => {
     const href = $(el).attr('href')
     if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-      warnings.push(`External CSS detected: ${href}`)
+      errors.push(`הקובץ מכיל CSS חיצוני - חייב להיות עצמאי (selfcontained=TRUE ב-R)`)
     }
   })
 
-  // Check for external JavaScript
+  // Check for external JavaScript - ERROR (not warning)
+  // Exception: Allow Plotly CDN (trusted library for statistical visualizations)
+  const ALLOWED_CDN_PATTERNS = [
+    /^https:\/\/cdn\.plot\.ly\/plotly-[\d.]+\.min\.js$/,  // Plotly CDN
+    /^https:\/\/cdn\.jsdelivr\.net\/npm\/plotly\.js@[\d.]+\/dist\/plotly\.min\.js$/,  // Plotly via jsDelivr
+  ]
+
   $('script[src]').each((i, el) => {
     const src = $(el).attr('src')
     if (src && (src.startsWith('http://') || src.startsWith('https://'))) {
-      warnings.push(`External JS detected: ${src}`)
+      // Check if it matches allowed CDN patterns
+      const isAllowed = ALLOWED_CDN_PATTERNS.some(pattern => pattern.test(src))
+      if (!isAllowed) {
+        errors.push(`הקובץ מכיל JavaScript חיצוני לא מורשה: ${src}`)
+      }
     }
   })
 
-  // Check for external images
+  // Check for external images - ERROR (not warning)
   $('img[src]').each((i, el) => {
     const src = $(el).attr('src')
     if (src && (src.startsWith('http://') || src.startsWith('https://'))) {
-      warnings.push(`External image detected: ${src}`)
+      errors.push(`הקובץ מכיל תמונות חיצוניות - חייב להיות עצמאי (selfcontained=TRUE ב-R)`)
     }
   })
 
@@ -111,13 +165,14 @@ export function validateHtmlSelfContained(htmlContent: string): HtmlValidationRe
                     htmlContent.includes('plotly-latest.min.js')
 
   if (!hasPlotly) {
-    warnings.push('Plotly library not detected - interactive charts may not work')
+    warnings.push('ספריית Plotly לא זוהתה - גרפים אינטראקטיביים עשויים לא לעבוד')
   }
 
   return {
     warnings,
     hasPlotly,
-    isValid: warnings.length === 0 || warnings.every(w => w.includes('Plotly'))
+    isValid: errors.length === 0,
+    errors: errors.length > 0 ? errors : undefined,
   }
 }
 

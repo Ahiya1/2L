@@ -1,0 +1,14 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "ADMIN_USERNAME": "@admin_username",
+    "ADMIN_PASSWORD_HASH_BASE64": "@admin_password_hash_base64",
+    "STORAGE_TYPE": "local",
+    "NEXT_PUBLIC_BASE_URL": "https://statviz.vercel.app"
+  }
+}

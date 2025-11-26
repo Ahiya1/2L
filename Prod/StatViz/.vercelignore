@@ -1,0 +1,8 @@
+.env.local
+.env
+uploads/
+.next/
+node_modules/
+.2L/
+prisma/*.db
+prisma/*.db-*

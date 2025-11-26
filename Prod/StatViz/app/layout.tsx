@@ -1,10 +1,20 @@
 import type { Metadata } from 'next'
+import { Rubik } from 'next/font/google'
 import './globals.css'
 import '@/lib/env' // Validate environment on startup
+import { Providers } from '@/components/Providers'
+import { Toaster } from 'sonner'
+
+const rubik = Rubik({
+  subsets: ['hebrew', 'latin'],
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-rubik',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'StatViz - Statistical Reports Platform',
-  description: 'Secure platform for viewing statistical analysis reports',
+  title: 'StatViz - פלטפורמת דוחות סטטיסטיים',
+  description: 'פלטפורמה מאובטחת לצפייה בדוחות ניתוח סטטיסטיים',
 }
 
 export default function RootLayout({
@@ -13,8 +23,21 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="he" dir="rtl">
-      <body>{children}</body>
+    <html lang="he" dir="rtl" className={rubik.variable}>
+      <body className="font-sans">
+        <Providers>
+          {children}
+        </Providers>
+        <Toaster
+          position="top-left"
+          richColors
+          closeButton
+          toastOptions={{
+            duration: 4000,
+            style: { direction: 'rtl' }
+          }}
+        />
+      </body>
     </html>
   )
 }

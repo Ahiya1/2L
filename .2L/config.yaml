@@ -1,6 +1,6 @@
 current_plan: plan-9
-global_iteration_counter: 7
-current_iteration: 8
+global_iteration_counter: 8
+current_iteration: 9
 current_phase: exploration
 plans:
 - plan_id: plan-1
@@ -67,4 +67,4 @@ plans:
     num_explorers: 4
     complexity_level: COMPLEX
   master_plan_file: .2L/plan-9/master-plan.yaml
-next_iteration_number: 8
+next_iteration_number: 9

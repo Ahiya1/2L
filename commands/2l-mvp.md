@@ -1195,6 +1195,9 @@ Create report at: {validation_dir}/validation-report.md"
     if validation_status == 'PASS':
         print(f"   ✅ Validation PASSED")
 
+        # Create iteration reflection (Feature 2: Automatic Reflection Creation)
+        create_iteration_reflection(plan_id, global_iter, ITER_DIR)
+
         # Orchestrator Reflection: Merge learnings before iteration complete
         orchestrator_reflection(plan_id, global_iter, ITER_DIR)
 
@@ -1430,6 +1433,9 @@ Create report at: {healing_dir}/validation-report.md"
 
         if validation_status == 'PASS':
             print(f"      ✅ Healing successful!")
+
+            # Create iteration reflection (Feature 2: Automatic Reflection Creation)
+            create_iteration_reflection(plan_id, global_iter, ITER_DIR)
 
             # Orchestrator Reflection: Merge learnings before iteration complete
             orchestrator_reflection(plan_id, global_iter, ITER_DIR)
@@ -1676,6 +1682,62 @@ def update_config_github_repo(plan_id, repo_url):
 
     write_yaml(config_file, config)
 
+
+def create_iteration_reflection(plan_id, global_iter, iteration_dir):
+    """
+    Create REFLECTION.md for this iteration after validation passes.
+
+    This function generates a structured reflection document from iteration artifacts,
+    detects framework issues, and logs learnings to global-learnings.jsonl.
+    Non-critical execution - failures are logged but don't block iteration completion.
+
+    Args:
+        plan_id: Current plan ID (e.g., "plan-9")
+        global_iter: Global iteration number
+        iteration_dir: Path to iteration directory (e.g., ".2L/plan-9/iteration-9")
+    """
+
+    reflection_path = f"{iteration_dir}/REFLECTION.md"
+    global_learnings_jsonl = ".2L/global-learnings.jsonl"
+
+    echo "   📝 Generating iteration reflection..."
+
+    # Call Python reflection generator (redirect errors to suppress noise)
+    python3 "$HOME/.claude/lib/2l-reflection-generator.py" \
+        --iteration-dir "$iteration_dir" \
+        --plan-id "$plan_id" \
+        --iteration "$global_iter" \
+        --output "$reflection_path" \
+        --jsonl "$global_learnings_jsonl" 2>/dev/null
+
+    exit_code = $?
+
+    if [ $exit_code -eq 0 ]; then
+        echo "      ✅ Reflection created: $reflection_path"
+
+        # Emit success event
+        if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+            log_2l_event "reflection_created" \
+                         "Iteration ${global_iter} reflection created" \
+                         "reflection" \
+                         "orchestrator"
+        fi
+
+        return 0
+    else
+        echo "      ⚠️  Reflection generation failed (non-critical, continuing)"
+
+        # Emit failure event (for monitoring, but don't block)
+        if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+            log_2l_event "reflection_failed" \
+                         "Exit code: ${exit_code}" \
+                         "reflection" \
+                         "orchestrator"
+        fi
+
+        return 1  # Non-blocking failure
+    fi
+```
 
 def orchestrator_reflection(plan_id, global_iter, iteration_dir):
     """

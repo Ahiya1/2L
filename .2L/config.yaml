@@ -1,7 +1,7 @@
-current_plan: plan-9
+current_plan: plan-10
 global_iteration_counter: 9
 current_iteration: 10
-current_phase: exploration
+current_phase: validation
 plans:
 - plan_id: plan-1
   name: 2L System Tightening - Dashboard + MCP Cleanup + Healing Exploration
@@ -71,5 +71,18 @@ plans:
   iterations:
   - 8
   - 9
+  - 10
+- plan_id: plan-10
+  name: Cross-Project Learning Aggregation
+  status: PLANNED
+  created_at: '2025-11-27T16:20:00Z'
+  vision_file: .2L/plan-10/vision.md
+  description: 'Complete meta-circular learning loop: aggregate framework issues from
+    all Prod/* projects for ecosystem-wide improvement'
+  master_exploration:
+    num_explorers: 4
+    complexity_level: COMPLEX
+  master_plan_file: .2L/plan-10/master-plan.yaml
+  iterations:
   - 10
 next_iteration_number: 10

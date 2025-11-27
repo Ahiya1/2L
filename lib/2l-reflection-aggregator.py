@@ -42,6 +42,9 @@ import json
 import argparse
 import fcntl
 import re
+import glob
+import os
+import time
 from pathlib import Path
 from datetime import datetime
 from difflib import SequenceMatcher
@@ -62,6 +65,153 @@ generate_pattern_id = _yaml_helpers.generate_pattern_id
 SCHEMA_VERSION = "1.0"
 DEFAULT_SIMILARITY_THRESHOLD = 0.8
 BORDERLINE_LOG_RANGE = (0.75, 0.85)
+
+
+def infer_source_project(jsonl_path: Path) -> str:
+    """
+    Extract source project name from JSONL path.
+
+    Uses path analysis to determine which project generated the learning:
+    - Meditation space: ~/Ahiya/2L/.2L/... → "meditation-space"
+    - Simple Prod: ~/Ahiya/2L/Prod/StatViz/.2L/... → "StatViz"
+    - Nested Prod: ~/Ahiya/2L/Prod/clients/acme/dashboard/.2L/... → "clients-acme-dashboard"
+
+    Args:
+        jsonl_path: Path to global-learnings.jsonl file
+
+    Returns:
+        Project name string (e.g., "StatViz", "meditation-space")
+
+    Examples:
+        >>> infer_source_project(Path("~/Ahiya/2L/Prod/StatViz/.2L/global-learnings.jsonl"))
+        'StatViz'
+        >>> infer_source_project(Path("~/Ahiya/2L/.2L/global-learnings.jsonl"))
+        'meditation-space'
+        >>> infer_source_project(Path("~/Ahiya/2L/Prod/clients/acme/dashboard/.2L/..."))
+        'clients-acme-dashboard'
+    """
+    parts = jsonl_path.parts
+
+    # Check if in Prod/* directory
+    if 'Prod' in parts:
+        prod_index = parts.index('Prod')
+
+        # Get all parts between 'Prod' and '.2L' (or end)
+        project_parts = []
+        for i in range(prod_index + 1, len(parts)):
+            if parts[i] == '.2L':
+                break
+            project_parts.append(parts[i])
+
+        # Join with dash for nested projects
+        if project_parts:
+            return '-'.join(project_parts)
+
+    # Default: Meditation space (2L's own iterations)
+    return "meditation-space"
+
+
+def discover_prod_learnings() -> List[Path]:
+    """
+    Discover all global-learnings.jsonl files in Prod/* projects.
+
+    Returns:
+        List of valid JSONL file paths (empty list if none found or error)
+
+    Examples:
+        >>> discover_prod_learnings()
+        [PosixPath('.../Prod/StatViz/.2L/global-learnings.jsonl'),
+         PosixPath('.../Prod/wealth/.2L/global-learnings.jsonl')]
+    """
+    # Expand ~ to home directory
+    pattern = os.path.expanduser('~/Ahiya/2L/Prod/*/.2L/global-learnings.jsonl')
+
+    try:
+        matches = glob.glob(pattern)
+    except (PermissionError, OSError) as e:
+        print(f"WARNING: Cannot access Prod/* directories: {e}", file=sys.stderr)
+        return []
+
+    # Validate paths exist and are files
+    valid_paths = []
+    for match in matches:
+        path = Path(match)
+        if path.exists() and path.is_file():
+            valid_paths.append(path)
+        else:
+            print(f"WARNING: Skipping invalid path: {match}", file=sys.stderr)
+
+    return valid_paths
+
+
+def read_jsonl_with_recovery(jsonl_path: Path) -> List[Dict]:
+    """
+    Read JSONL file with line-by-line error recovery.
+
+    Args:
+        jsonl_path: Path to .jsonl file
+
+    Returns:
+        List of valid learning dictionaries (empty if file unreadable)
+    """
+    learnings = []
+
+    try:
+        with open(jsonl_path, 'r') as f:
+            for line_num, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue  # Skip empty lines
+
+                try:
+                    learnings.append(json.loads(line))
+                except json.JSONDecodeError as e:
+                    print(f"WARNING: Malformed JSON at {jsonl_path}:{line_num}: {e}",
+                          file=sys.stderr)
+                    continue
+    except (FileNotFoundError, PermissionError) as e:
+        print(f"WARNING: Cannot read {jsonl_path}: {e}", file=sys.stderr)
+        return []
+
+    return learnings
+
+
+def read_multi_source_jsonl(jsonl_paths: List[Path]) -> List[Dict]:
+    """
+    Read learnings from multiple JSONL sources with source tracking.
+
+    Args:
+        jsonl_paths: List of paths to global-learnings.jsonl files
+
+    Returns:
+        List of learning dictionaries with source_project field added
+
+    Error Handling:
+        - Missing files: Log warning, skip
+        - Malformed JSON: Log warning, skip line
+        - Permission denied: Log warning, skip file
+    """
+    all_learnings = []
+
+    for jsonl_path in jsonl_paths:
+        # Derive source project from path
+        source_project = infer_source_project(jsonl_path)
+
+        # Read learnings from this source
+        learnings = read_jsonl_with_recovery(jsonl_path)
+
+        # Tag each learning with source_project
+        for learning in learnings:
+            # Add field if missing (backwards compatibility)
+            if 'source_project' not in learning:
+                learning['source_project'] = source_project
+
+            all_learnings.append(learning)
+
+        print(f"   Loaded {len(learnings)} learnings from {source_project}",
+              file=sys.stderr)
+
+    return all_learnings
 
 
 class ReflectionAggregator:
@@ -148,7 +298,7 @@ class ReflectionAggregator:
         self, learning: Dict, pattern: Dict
     ) -> Dict:
         """
-        Merge learning into existing pattern.
+        Merge learning into existing pattern, tracking source projects.
 
         Args:
             learning: Learning to merge
@@ -156,6 +306,9 @@ class ReflectionAggregator:
 
         Returns:
             Updated pattern dictionary
+
+        Side Effects:
+            Modifies pattern in-place
         """
         # Increment occurrence count
         pattern["occurrences"] = pattern.get("occurrences", 1) + 1
@@ -171,6 +324,16 @@ class ReflectionAggregator:
             pattern["projects"] = []
         if project not in pattern["projects"]:
             pattern["projects"].append(project)
+
+        # NEW: Track source_projects for cross-project evidence
+        source_project = learning.get("source_project", "unknown")
+        if "source_projects" not in pattern:
+            pattern["source_projects"] = []
+        if source_project not in pattern["source_projects"]:
+            pattern["source_projects"].append(source_project)
+
+        # NEW: Update evidence count
+        pattern["evidence_count"] = len(pattern["source_learnings"])
 
         # Update affected files (merge lists)
         if "affected_files" in learning:
@@ -212,6 +375,8 @@ class ReflectionAggregator:
             "name": learning.get("issue", "Unknown issue")[:60],  # Truncate
             "occurrences": 1,
             "projects": [learning.get("project", "unknown")],
+            "source_projects": [learning.get("source_project", "unknown")],  # NEW
+            "evidence_count": 1,  # NEW
             "severity": learning.get("severity", "medium"),
             "category": learning.get("category", "functionality"),
             "root_cause": learning.get("root_cause", ""),
@@ -455,7 +620,7 @@ Examples:
     parser.add_argument(
         "--jsonl",
         required=True,
-        help="Path to global-learnings.jsonl",
+        help="Path to global-learnings.jsonl (comma-separated for multiple sources)",
     )
     parser.add_argument(
         "--threshold",
@@ -474,14 +639,6 @@ Examples:
     try:
         # Validate inputs
         learnings_path = Path(args.global_learnings)
-        jsonl_path = Path(args.jsonl)
-
-        if not jsonl_path.exists():
-            print(
-                f"ERROR: JSONL file not found: {jsonl_path}",
-                file=sys.stderr,
-            )
-            sys.exit(2)
 
         # Validate threshold
         if not 0.0 <= args.threshold <= 1.0:
@@ -491,17 +648,35 @@ Examples:
             )
             sys.exit(2)
 
+        # Parse JSONL sources (comma-separated)
+        jsonl_sources = args.jsonl.split(',') if args.jsonl else []
+        jsonl_paths = [Path(src.strip()) for src in jsonl_sources if src.strip()]
+
+        # Validate at least one source exists
+        if not any(p.exists() for p in jsonl_paths):
+            print(
+                f"ERROR: No valid JSONL files found in: {args.jsonl}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
         print(f"📊 2L Reflection Aggregator")
         print(f"   Mode: {args.mode}")
         print(f"   Threshold: {args.threshold}")
-        print(f"   JSONL: {jsonl_path}")
+        print(f"   Sources: {len(jsonl_paths)}")
+        for path in jsonl_paths:
+            status = "✓" if path.exists() else "✗"
+            print(f"      {status} {path}")
         print(f"   YAML: {learnings_path}")
         print()
 
-        # Read learnings from JSONL
-        print("📖 Reading learnings from JSONL...")
-        learnings = read_jsonl(jsonl_path)
-        print(f"   Found {len(learnings)} learnings")
+        # Start timing
+        start_time = time.time()
+
+        # Read learnings from all JSONL sources
+        print("📖 Reading learnings from JSONL sources...")
+        learnings = read_multi_source_jsonl(jsonl_paths)
+        print(f"   Total learnings from {len(jsonl_paths)} source(s): {len(learnings)}")
 
         if not learnings:
             print("   ℹ️  No learnings to process")
@@ -529,8 +704,18 @@ Examples:
             dry_run=args.dry_run,
         )
 
+        # Performance metrics
+        elapsed = time.time() - start_time
+        print(f"\n⏱️  Aggregation complete: {elapsed:.2f}s")
+        print(f"   Learnings processed: {len(learnings)}")
+        print(f"   Patterns updated: {len(updated_patterns)}")
+
+        if elapsed > 5.0:
+            print(f"⚠️  WARNING: Aggregation exceeded 5s target ({elapsed:.2f}s)",
+                  file=sys.stderr)
+
         # Summary
-        print(f"\n✅ Aggregation complete!")
+        print(f"\n✅ Success!")
         print(f"   New patterns created: {new_count}")
         print(f"   Learnings merged: {merged_count}")
         print(f"   Total patterns: {len(updated_patterns)}")

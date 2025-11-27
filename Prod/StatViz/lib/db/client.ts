@@ -1,10 +1,9 @@
 /**
  * Prisma Client Singleton
  *
- * DEPENDENCY: This file should be created by Builder-1
- *
- * This is a placeholder to enable Builder-3 development.
- * Builder-1 will replace this with the actual implementation.
+ * Configured for Supabase with pgBouncer:
+ * - Disables prepared statements to work with connection pooling
+ * - Reuses single client instance to prevent connection leaks
  */
 
 import { PrismaClient } from '@prisma/client'

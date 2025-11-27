@@ -41,12 +41,33 @@ PRIORITY_WEIGHTS = {
     'P3': 1.0   # Speed (performance only)
 }
 
-# Framework detection keywords
+# Framework detection keywords (Plan-10 Enhanced)
 FRAMEWORK_KEYWORDS = [
+    # Agent names
     'orchestrator', 'explorer', 'builder', 'integrator', 'validator', 'healer',
+
+    # Agent lifecycle
     'task tool', 'agent spawn', 'agent_start', 'agent_complete',
-    '2l-mvp', '2l-improve', '2l-dashboard', 'event logging',
-    'pattern detection', 'reflection', 'aggregation'
+
+    # Commands
+    '2l-mvp', '2l-improve', '2l-dashboard', '2l-vision', '2l-plan', '2l-build',
+
+    # Core systems
+    'event logging', 'pattern detection', 'reflection', 'aggregation',
+
+    # Plan-10 specific: Cross-project learning
+    'federation', 'cross-project', 'multi-source', 'prod/* discovery',
+    'source_project', 'source tracking',
+
+    # Data layer
+    'jsonl corruption', 'yaml parsing', 'global-learnings',
+    'pattern lifecycle', 'learning aggregation',
+
+    # Framework performance (NOT app performance)
+    'aggregation slow', 'reflection generation timeout', 'reflection generation slow',
+    'pattern matching slow', 'agent spawn timeout', 'agent spawn slow',
+    'integration phase slow', 'validation phase slow', 'exploration phase slow',
+    'orchestrator slow', 'builder timeout'
 ]
 
 # Framework file path patterns
@@ -267,40 +288,68 @@ class ReflectionGenerator:
 
     def is_framework_issue(self, issue: Dict) -> bool:
         """
-        Determine if an issue is related to 2L framework.
+        Determine if an issue is related to 2L framework vs project code.
 
-        Uses multi-heuristic approach:
-        1. File path matching (commands/, lib/, etc.)
-        2. Keyword matching in root cause/issue text
-        3. Conservative bias (prefer false negatives)
+        Uses multi-signal heuristic with conservative bias:
+        1. Path-based (HIGHEST confidence): Framework paths = True, Project paths = False
+        2. Keyword-based (MEDIUM confidence): Framework keywords + no project path = True
+        3. Conservative default: False (when in doubt, DON'T capture)
 
         Args:
-            issue: Issue dictionary
+            issue: Issue dictionary with 'issue', 'root_cause', 'location' fields
 
         Returns:
-            True if framework issue, False otherwise
+            True if framework issue, False if project issue
+
+        Examples:
+            Framework issues (CAPTURE):
+            - "Integration phase slow" in validation report → True (framework performance)
+            - "Agent spawn timeout" in logs → True (framework functionality)
+            - Issue in "lib/2l-reflection-aggregator.py" → True (framework path)
+            - Issue in "agents/2l-builder.md" → True (framework path)
+
+            Project issues (DON'T CAPTURE):
+            - "Database query slow" in app code → False (app performance)
+            - "Builder took 2 minutes" in app/services/auth.ts → False (app code)
+            - Issue in "src/components/LoginForm.tsx" → False (project path)
+            - Issue in "app/api/users/route.ts" → False (project path)
+
+            Edge cases (follow conservative bias):
+            - "Builder took 2 minutes" in agents/2l-builder.md → True (framework path wins)
+            - "Slow response" with no location → False (uncertain, don't capture)
+            - "Integration tests slow" with no location → False (ambiguous, don't capture)
         """
-        # Check file paths
         location = issue.get('location', '').lower()
+
+        # Signal 1: Framework file paths (HIGHEST confidence - framework issue)
         for framework_path in FRAMEWORK_PATHS:
             if framework_path.lower() in location:
                 return True
 
-        # Exclude project-specific paths
+        # Signal 2: Project-specific paths (HIGH confidence - NOT framework issue)
         for project_path in PROJECT_PATHS:
             if project_path.lower() in location:
                 return False
 
-        # Check keywords in issue text and root cause
+        # Signal 3: Keyword matching with context awareness
         issue_text = (issue.get('issue', '') + ' ' +
                      issue.get('root_cause', '') + ' ' +
+                     issue.get('context', '') + ' ' +
                      issue.get('impact', '')).lower()
 
-        for keyword in FRAMEWORK_KEYWORDS:
-            if keyword.lower() in issue_text:
-                return True
+        # Check for framework keywords
+        has_framework_keyword = any(
+            keyword.lower() in issue_text
+            for keyword in FRAMEWORK_KEYWORDS
+        )
 
-        # Conservative: if uncertain, mark as non-framework
+        # Framework keyword WITHOUT project path = likely framework issue
+        if has_framework_keyword and not any(pp in location for pp in PROJECT_PATHS):
+            return True
+
+        # Conservative default: NOT framework issue
+        # Rationale: Better to miss a framework issue (false negative) than
+        # to pollute global learnings with app-specific issues (false positive)
         return False
 
     def categorize_issues(self, issues: List[Dict]) -> List[Dict]:
@@ -328,11 +377,38 @@ class ReflectionGenerator:
 
     def categorize_by_priority(self, issue: Dict) -> str:
         """
-        Categorize single issue by priority.
+        Categorize issue priority based on FRAMEWORK impact (not app impact).
 
-        P1 (Functionality): Breaks existing workflow
-        P2 (Completeness): Missing features or gaps
-        P3 (Speed): Performance issues only
+        Priority Levels (FRAMEWORK-FOCUSED):
+
+        P1 (Functionality): 2L workflow broken
+            - Agent crashes, orchestrator fails, command errors
+            - Examples:
+              * "Builder agent crashes on complex tasks"
+              * "Orchestrator fails to spawn explorers"
+              * "/2l-improve command throws error"
+              * "JSONL corruption breaks aggregation"
+
+        P2 (Completeness): 2L missing features or capabilities
+            - Workflow gaps, missing functionality, incomplete implementations
+            - Examples:
+              * "No healing phase for failed integrations"
+              * "Missing exploration before vision generation"
+              * "Pattern lifecycle doesn't track verification"
+              * "No cross-project learning aggregation"
+
+        P3 (Speed): 2L framework performance issues
+            - Agent spawn slow, integration slow, aggregation slow, reflection slow
+            - IMPORTANT: Only FRAMEWORK performance, NOT app performance
+            - Examples:
+              * "Integration phase takes 45s for 4 builders" (framework)
+              * "Agent spawn timeout after 30s" (framework)
+              * "Aggregation slow with 100+ learnings" (framework)
+              * "Reflection generation takes 10s" (framework)
+            - Counter-examples (NOT P3):
+              * "Database query slow" (app performance, not framework)
+              * "Build takes 5 minutes" (app tooling, not framework)
+              * "API response slow" (app performance, not framework)
 
         Args:
             issue: Issue dictionary
@@ -346,21 +422,35 @@ class ReflectionGenerator:
 
         # P1 keywords (functionality breaks)
         p1_keywords = ['fails', 'crashes', 'error', 'cannot', 'blocking',
-                       'breaks', 'critical', 'broken', 'does not work']
+                       'breaks', 'critical', 'broken', 'does not work',
+                       'agent crash', 'orchestrator fail', 'command error',
+                       'jsonl corruption', 'yaml parsing error']
         for keyword in p1_keywords:
             if keyword in issue_text:
                 return 'P1'
 
-        # P3 keywords (performance only)
-        p3_keywords = ['slow', 'performance', 'timeout', 'takes too long',
-                       'optimization', 'faster', 'latency']
-        for keyword in p3_keywords:
+        # P3 keywords (framework performance ONLY)
+        # These are paired with framework-specific terms to avoid false positives
+        p3_framework_performance = [
+            'aggregation slow', 'reflection generation slow', 'reflection generation timeout',
+            'pattern matching slow', 'agent spawn timeout', 'agent spawn slow',
+            'integration phase slow', 'validation phase slow', 'exploration phase slow',
+            'orchestrator slow', 'builder timeout', 'healer timeout'
+        ]
+        for keyword in p3_framework_performance:
             if keyword in issue_text:
+                return 'P3'
+
+        # General performance keywords (only if framework context)
+        if any(kw in issue_text for kw in ['slow', 'timeout', 'performance']):
+            # Check for framework context
+            if any(fw in issue_text for fw in ['agent', 'phase', 'orchestrator', 'aggregation', 'reflection']):
                 return 'P3'
 
         # P2 keywords (completeness)
         p2_keywords = ['missing', 'lacks', 'not implemented', 'incomplete',
-                       'should have', 'could have', 'enhancement']
+                       'should have', 'could have', 'enhancement', 'no support for',
+                       'doesn\'t support', 'needs', 'requires']
         for keyword in p2_keywords:
             if keyword in issue_text:
                 return 'P2'
@@ -456,6 +546,54 @@ def generate_reflection_markdown(reflection: Dict, template_path: Path) -> str:
     output = output.replace('{NEXT_STEPS}', reflection['summary']['next_steps'])
 
     return output
+
+
+def infer_source_project(jsonl_path: Optional[Path] = None) -> str:
+    """
+    Extract source project name from JSONL path or current directory.
+
+    Uses path analysis to determine which project generated the learning:
+    - Meditation space: ~/Ahiya/2L/.2L/... → "meditation-space"
+    - Simple Prod: ~/Ahiya/2L/Prod/StatViz/.2L/... → "StatViz"
+    - Nested Prod: ~/Ahiya/2L/Prod/clients/acme/dashboard/.2L/... → "clients-acme-dashboard"
+
+    Args:
+        jsonl_path: Path to global-learnings.jsonl (optional, uses cwd if None)
+
+    Returns:
+        Project name string (e.g., "StatViz", "meditation-space")
+
+    Examples:
+        >>> infer_source_project(Path("~/Ahiya/2L/Prod/StatViz/.2L/global-learnings.jsonl"))
+        'StatViz'
+        >>> infer_source_project(Path("~/Ahiya/2L/.2L/global-learnings.jsonl"))
+        'meditation-space'
+        >>> infer_source_project(Path("~/Ahiya/2L/Prod/clients/acme/dashboard/.2L/..."))
+        'clients-acme-dashboard'
+    """
+    # Use current working directory if no path provided
+    if jsonl_path is None:
+        jsonl_path = Path.cwd()
+
+    parts = jsonl_path.parts
+
+    # Check if in Prod/* directory
+    if 'Prod' in parts:
+        prod_index = parts.index('Prod')
+
+        # Get all parts between 'Prod' and '.2L' (or end)
+        project_parts = []
+        for i in range(prod_index + 1, len(parts)):
+            if parts[i] == '.2L':
+                break
+            project_parts.append(parts[i])
+
+        # Join with dash for nested projects
+        if project_parts:
+            return '-'.join(project_parts)
+
+    # Default: Meditation space (2L's own iterations)
+    return "meditation-space"
 
 
 def append_to_jsonl(learning: Dict, jsonl_path: Path) -> None:
@@ -578,9 +716,13 @@ Examples:
             # Append to JSONL
             if args.jsonl and reflection['framework_issues']:
                 jsonl_path = Path(args.jsonl)
+                # Derive source project from current directory or JSONL path
+                source_project = infer_source_project(jsonl_path)
+
                 for idx, issue in enumerate(reflection['framework_issues'], 1):
                     learning = {
                         'learning_id': f"{args.plan_id}-iter-{args.iteration}-learning-{idx:03d}",
+                        'source_project': source_project,  # NEW: Track where this learning came from
                         'project': reflection['metadata']['project'],
                         'plan_id': args.plan_id,
                         'iteration': args.iteration,

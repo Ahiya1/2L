@@ -18,6 +18,36 @@ import os
 from datetime import datetime
 
 
+def format_cross_project_evidence(pattern):
+    """
+    Format cross-project evidence for vision display.
+
+    Args:
+        pattern: Pattern dictionary with source_projects and evidence_count
+
+    Returns:
+        Formatted string for vision markdown
+    """
+    source_projects = pattern.get('source_projects', [])
+    evidence_count = pattern.get('evidence_count', 0)
+
+    if len(source_projects) == 0:
+        return "Evidence: None (legacy pattern)"
+
+    if len(source_projects) == 1:
+        return f"Evidence: {evidence_count} occurrence(s) in {source_projects[0]}"
+
+    # Multiple projects - show cross-project evidence
+    confidence = "HIGH" if len(source_projects) >= 3 else "MEDIUM"
+    projects_str = ", ".join(source_projects)
+
+    return f"""Cross-Project Evidence:
+- **Confidence:** {confidence} ({len(source_projects)} projects affected)
+- **Projects:** {projects_str}
+- **Total occurrences:** {evidence_count}
+- **Impact:** Framework issue detected across multiple production projects"""
+
+
 def infer_affected_components(root_cause):
     """
     Infer which agents/commands to modify based on root cause keywords.
@@ -85,6 +115,9 @@ def generate_improvement_vision(pattern, plan_id, template_path, exploration_dir
     # Recurrence risk based on occurrences
     recurrence_risk = 'high' if pattern['occurrences'] >= 3 else 'medium'
 
+    # Cross-project evidence
+    cross_project_evidence = format_cross_project_evidence(pattern)
+
     # Variable substitution
     replacements = {
         '{PATTERN_NAME}': pattern['name'],
@@ -107,6 +140,7 @@ def generate_improvement_vision(pattern, plan_id, template_path, exploration_dir
         '{SPECIFIC_IMPLEMENTATION}': pattern['proposed_solution'],  # Reuse solution as implementation
         '{DISCOVERED_AT}': pattern.get('discovered_at', 'unknown'),
         '{SOURCE_LEARNING_IDS}': ', '.join(pattern.get('source_learnings', [])),
+        '{CROSS_PROJECT_EVIDENCE}': cross_project_evidence,  # NEW: Cross-project evidence
     }
 
     # Infer affected components

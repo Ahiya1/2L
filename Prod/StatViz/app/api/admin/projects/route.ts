@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
  * - html_file: File (HTML format, max 50 MB)
  *
  * Response:
- * - 200: { success: true, data: { project_id, project_url, password, html_warnings, has_plotly } }
+ * - 200: { success: true, data: { projectId, projectUrl, password, htmlWarnings, hasPlotly } }
  * - 400: { success: false, error: { code, message, details } } - Validation error
  * - 500: { success: false, error: { code, message } } - Server error
  *
@@ -169,11 +169,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        project_id: result.projectId,
-        project_url: result.url,
+        projectId: result.projectId,
+        projectUrl: result.url,
         password: result.password,
-        html_warnings: result.htmlWarnings,
-        has_plotly: result.hasPlotly,
+        htmlWarnings: result.htmlWarnings,
+        hasPlotly: result.hasPlotly,
       }
     })
 

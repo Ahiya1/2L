@@ -1,0 +1,82 @@
+plan_id: plan-10
+created_at: '2025-11-27T16:45:00Z'
+status: PLANNED
+total_iterations: 1
+
+strategy: |
+  Single-iteration implementation focused on completing the meta-circular learning loop.
+
+  **Consensus from all 4 master explorers:**
+  - Complexity: MEDIUM (all features tightly coupled, 8-12h estimate)
+  - All 5 features build on each other - splitting creates awkward intermediate states
+  - Strong existing foundation (reflection-generator, aggregator, pattern-lifecycle)
+  - Additive changes only (backward compatible schema extensions)
+  - Low risk with clear architecture (extend JSONL → YAML aggregation pipeline)
+
+  **Critical path:**
+  1. Multi-source discovery (glob Prod/*/.2L/global-learnings.jsonl)
+  2. Source project tracking (add source_project field)
+  3. Framework-only filtering (heuristics to exclude app issues)
+  4. Multi-source aggregation (merge with cross-project evidence)
+  5. Priority classification clarity (P1/P2/P3 framework focus)
+
+  **Key architectural decisions:**
+  - Use Python glob module for discovery (centralized in aggregator)
+  - Conservative filtering bias (prefer false negatives to reduce noise)
+  - Lazy aggregation model (pull-based on /2l-improve, not real-time)
+  - Source tracking preserved through entire pipeline
+  - Evidence count shows cross-project pattern confidence
+
+  **Risk mitigations:**
+  - Graceful degradation on missing Prod/* files (non-blocking)
+  - Framework vs app classification documented with examples
+  - Backward compatibility for learnings without source_project field
+  - Performance acceptable (<5s for 100+ learnings from 10+ projects)
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 10
+    name: "Cross-Project Learning Aggregation MVP"
+    vision: "Complete meta-circular learning loop with ecosystem-wide federation"
+    scope: |
+      Implement all 5 must-have features in a single cohesive iteration:
+
+      **Feature 1: Multi-Source Learning Discovery**
+      - Glob pattern finds all ~/Ahiya/2L/Prod/*/.2L/global-learnings.jsonl
+      - Meditation space learnings always included
+      - Graceful handling of missing files
+      - Only runs in meditation space context
+
+      **Feature 2: Framework-Only Filtering**
+      - Expand FRAMEWORK_KEYWORDS with orchestrator, explorer, builder, etc.
+      - Path-based heuristics (commands/lib/agents vs app/src/components)
+      - Document "what qualifies as framework issue"
+      - Conservative bias (prefer NOT capturing over capturing noise)
+
+      **Feature 3: Priority Classification Clarity**
+      - P1 = 2L workflow broken (agent crash, orchestrator fail)
+      - P2 = 2L missing features (no healing, can't spawn tasks)
+      - P3 = 2L framework performance (agent spawn slow, NOT app build slow)
+      - Updated docstrings and examples
+
+      **Feature 4: Source Project Tracking**
+      - Add source_project field to learning JSONL entries
+      - Derive from directory path (Prod/StatViz → "StatViz")
+      - Preserve through aggregation pipeline
+      - Display in pattern evidence ("Detected in: StatViz, TaskManager")
+
+      **Feature 5: Multi-Source Aggregation**
+      - Aggregator accepts multiple JSONL sources
+      - Deduplication across sources
+      - source_projects list in patterns (cross-project evidence)
+      - evidence_count field (number of learnings supporting pattern)
+
+      **Success criteria:**
+      - /2l-improve discovers learnings from meditation space + all Prod/* projects
+      - Only framework issues captured (app bugs filtered out)
+      - Patterns show cross-project evidence when detected in 2+ projects
+      - All P3 learnings are framework performance (manual validation)
+      - Performance <5s aggregation for 100+ learnings
+
+    status: PENDING
+    dependencies: []

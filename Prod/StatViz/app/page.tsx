@@ -142,22 +142,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section - View Project */}
       <section className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl p-12 md:p-16 text-center shadow-2xl">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              מוכנים להתחיל?
+              כבר קיבלת קישור לפרויקט?
             </h2>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              הצטרפו אלינו עכשיו וקבלו גישה מיידית לכל הדוחות הסטטיסטיים שלכם
+              הזן את מזהה הפרויקט שלך כדי לצפות בדוח הסטטיסטי המלא
             </p>
-            <Button
-              size="lg"
-              className="text-lg h-14 px-10 bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                const projectId = formData.get('projectId') as string
+                if (projectId.trim()) {
+                  window.location.href = `/preview/${projectId.trim()}`
+                }
+              }}
+              className="max-w-md mx-auto flex gap-3"
             >
-              צור חשבון חינם
-            </Button>
+              <input
+                type="text"
+                name="projectId"
+                placeholder="מזהה פרויקט"
+                className="flex-1 h-14 px-6 rounded-xl text-slate-900 text-lg text-right"
+                dir="ltr"
+                required
+              />
+              <Button
+                type="submit"
+                size="lg"
+                className="text-lg h-14 px-8 bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
+              >
+                צפה בפרויקט
+              </Button>
+            </form>
+
+            <p className="text-sm text-blue-100 mt-4">
+              לא קיבלת קישור? כדי להתחיל לעבוד אפשר ליצור איתי קשר במייל{' '}
+              <a href="mailto:ahiya.butman@gmail.com" className="underline hover:text-white transition-colors">
+                ahiya.butman@gmail.com
+              </a>
+            </p>
           </div>
         </div>
       </section>

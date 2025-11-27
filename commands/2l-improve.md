@@ -99,9 +99,78 @@ if [ ! -f "$GLOBAL_LEARNINGS" ]; then
     exit 1
 fi
 
-# Step 1: Pattern Detection
-echo "📊 Step 1: Pattern Detection"
-echo "   Loading learnings from: $GLOBAL_LEARNINGS"
+# Step 1: Multi-Source Learning Discovery
+echo "📊 Step 1: Multi-Source Learning Discovery"
+echo "   Discovering learning sources..."
+echo ""
+
+# Discover meditation space learnings
+meditation_learnings=".2L/global-learnings.jsonl"
+
+# Discover Prod/* learnings using Python helper
+prod_learnings=$(python3 -c "
+import glob
+import os
+import sys
+
+# Discover Prod/* global-learnings.jsonl files
+pattern = os.path.expanduser('~/Ahiya/2L/Prod/*/.2L/global-learnings.jsonl')
+
+try:
+    matches = glob.glob(pattern)
+    valid_paths = []
+
+    for match in matches:
+        if os.path.exists(match) and os.path.isfile(match):
+            valid_paths.append(match)
+
+    # Print comma-separated paths to stdout
+    if valid_paths:
+        print(','.join(valid_paths))
+except (PermissionError, OSError) as e:
+    print(f'WARNING: Cannot access Prod/* directories: {e}', file=sys.stderr)
+" 2>&1)
+
+# Combine sources for aggregator
+all_sources="$meditation_learnings"
+discovered_count=1
+
+if [ -n "$prod_learnings" ]; then
+    all_sources="$all_sources,$prod_learnings"
+    # Count comma-separated prod sources
+    prod_count=$(echo "$prod_learnings" | tr ',' '\n' | wc -l)
+    discovered_count=$((discovered_count + prod_count))
+fi
+
+echo "   ✅ Discovered $discovered_count learning source(s):"
+echo "      - Meditation space: $meditation_learnings"
+if [ -n "$prod_learnings" ]; then
+    echo "$prod_learnings" | tr ',' '\n' | sed 's/^/      - Prod: /'
+fi
+echo ""
+
+# Step 1.5: Aggregate learnings from all sources
+echo "📊 Step 1.5: Learning Aggregation"
+echo "   Aggregating learnings from all sources..."
+echo ""
+
+# Run aggregator with all discovered sources
+python3 ~/.claude/lib/2l-reflection-aggregator.py \
+    --jsonl "$all_sources" \
+    --global-learnings "$GLOBAL_LEARNINGS" \
+    --mode incremental 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "❌ ERROR: Learning aggregation failed"
+    exit 1
+fi
+
+echo "   ✅ Aggregation complete"
+echo ""
+
+# Step 2: Pattern Detection
+echo "📊 Step 2: Pattern Detection"
+echo "   Loading patterns from: $GLOBAL_LEARNINGS"
 echo ""
 
 # Create temp file for patterns JSON
@@ -172,8 +241,8 @@ for i, p in enumerate(patterns[:5], 1):
 
 echo ""
 
-# Step 2: Pattern Selection
-echo "📊 Step 2: Pattern Selection"
+# Step 3: Pattern Selection
+echo "📊 Step 3: Pattern Selection"
 echo ""
 
 if [ -n "$specified_pattern" ]; then
@@ -276,8 +345,8 @@ else:
     print('plan-1')
 " 2>/dev/null || echo "plan-6")
 
-# Step 2.5: System Exploration - Analyze 2L's own codebase
-echo "📊 Step 2.5: System Exploration"
+# Step 3.5: System Exploration - Analyze 2L's own codebase
+echo "📊 Step 3.5: System Exploration"
 echo "   Analyzing 2L's own codebase to inform improvement vision..."
 echo ""
 
@@ -530,11 +599,11 @@ if [ "$EVENT_LOGGING_ENABLED" = true ]; then
                  "2l-improve"
 fi
 
-# Step 3: Vision Generation
-echo "📊 Step 3: Vision Generation"
+# Step 4: Vision Generation
+echo "📊 Step 4: Vision Generation"
 echo ""
 
-# Vision path (next_plan_id already determined in Step 2.5)
+# Vision path (next_plan_id already determined in Step 3.5)
 vision_path=".2L/${next_plan_id}/vision.md"
 
 echo "   Next plan ID: $next_plan_id"
@@ -615,8 +684,8 @@ if [ "$mode" = "dry-run" ]; then
     exit 0
 fi
 
-# Step 4: Confirmation Workflow (Builder-1 implements this)
-echo "📊 Step 4: Confirmation Workflow"
+# Step 5: Confirmation Workflow
+echo "📊 Step 5: Confirmation Workflow"
 echo ""
 
 # Display improvement confirmation
@@ -762,7 +831,7 @@ case "$choice" in
         ;;
 esac
 
-# Step 5: Self-Modification Execution (Builder-2 implementation)
+# Step 6: Self-Modification Execution
 echo ""
 echo "=========================================="
 echo "EXECUTING SELF-MODIFICATION"
@@ -863,7 +932,7 @@ function create_safety_checkpoint() {
 }
 
 # Verify orchestrator exclusion FIRST (fail fast)
-echo "   Step 5.1: Orchestrator Exclusion Check"
+echo "   Step 6.1: Orchestrator Exclusion Check"
 if ! verify_orchestrator_exclusion "$vision_path"; then
     exit 2  # Safety abort exit code
 fi
@@ -871,7 +940,7 @@ echo "   ✅ Orchestrator exclusion verified"
 echo ""
 
 # Verify git clean (with override option)
-echo "   Step 5.2: Git Status Check"
+echo "   Step 6.2: Git Status Check"
 if ! verify_git_clean; then
     echo ""
     echo "❌ Aborted due to git status check"
@@ -881,7 +950,7 @@ echo "   ✅ Git status OK"
 echo ""
 
 # Verify symlinks
-echo "   Step 5.3: Symlink Verification"
+echo "   Step 6.3: Symlink Verification"
 if ! verify_symlinks; then
     echo ""
     echo "❌ Aborted due to symlink integrity check"
@@ -892,7 +961,7 @@ echo "   ✅ Symlinks verified"
 echo ""
 
 # Create safety checkpoint
-echo "   Step 5.4: Safety Checkpoint"
+echo "   Step 6.4: Safety Checkpoint"
 cd ~/Ahiya/2L || {
     echo "❌ ERROR: Cannot change to meditation space"
     exit 1
@@ -910,7 +979,7 @@ if [ "$EVENT_LOGGING_ENABLED" = true ]; then
 fi
 
 # Run /2l-mvp
-echo "   Step 5.5: /2l-mvp Invocation"
+echo "   Step 6.5: /2l-mvp Invocation"
 echo "   🚀 Invoking /2l-mvp to implement improvement..."
 echo "      Vision: $vision_path"
 echo "      Checkpoint: $checkpoint_tag"
@@ -936,7 +1005,7 @@ if [ $mvp_exit_code -eq 0 ]; then
     fi
 
     # Post-modification commit
-    echo "   Step 5.6: Post-Modification Git Commit"
+    echo "   Step 6.6: Post-Modification Git Commit"
     git add -A
     commit_msg="Self-improvement: ${selected_pattern_id}
 
@@ -961,7 +1030,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     echo ""
 
     # Run smoke tests to validate 2L framework health
-    echo "   Step 5.7: Post-Modification Smoke Tests"
+    echo "   Step 6.7: Post-Modification Smoke Tests"
     echo "   Running smoke tests to validate 2L framework health..."
     echo ""
 
@@ -987,7 +1056,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     fi
 
     # Update pattern status using lifecycle manager
-    echo "   Step 5.8: Pattern Lifecycle Update"
+    echo "   Step 6.8: Pattern Lifecycle Update"
     echo "   Updating pattern status to IMPLEMENTED..."
 
     python3 "$HOME/.claude/lib/2l-pattern-lifecycle.py" update \

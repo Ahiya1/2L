@@ -22,7 +22,7 @@ const EnvSchema = z.object({
   ADMIN_PASSWORD_HASH_BASE64: z.string().min(1, 'ADMIN_PASSWORD_HASH_BASE64 is required'),
 
   // File Storage
-  STORAGE_TYPE: z.enum(['local', 's3']).default('local'),
+  STORAGE_TYPE: z.enum(['local', 's3', 'supabase']).default('local'),
   UPLOAD_DIR: z.string().optional(),
 
   // S3 (conditional - required if STORAGE_TYPE === 's3')
@@ -30,6 +30,10 @@ const EnvSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_REGION: z.string().optional(),
+
+  // Supabase (conditional - required if STORAGE_TYPE === 'supabase')
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
   // Application
   NEXT_PUBLIC_BASE_URL: z.string().url('NEXT_PUBLIC_BASE_URL must be a valid URL'),

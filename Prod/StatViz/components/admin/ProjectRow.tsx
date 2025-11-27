@@ -1,13 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { ExternalLink, Trash2 } from 'lucide-react'
+import { ExternalLink, Trash2, KeyRound } from 'lucide-react'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from './CopyButton'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
+import { RegeneratePasswordModal } from './RegeneratePasswordModal'
 import { useDeleteProject } from '@/lib/hooks/useDeleteProject'
+import { useRegeneratePassword } from '@/lib/hooks/useRegeneratePassword'
 import { formatHebrewDate, formatViewCount } from '@/lib/utils/dates'
+import { toast } from 'sonner'
 import type { Project } from '@/lib/types/admin'
 
 interface Props {
@@ -16,7 +19,10 @@ interface Props {
 
 export function ProjectRow({ project }: Props) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [newPassword, setNewPassword] = useState<string>('')
   const deleteProject = useDeleteProject()
+  const regeneratePassword = useRegeneratePassword()
 
   const projectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/preview/${project.projectId}`
 
@@ -27,6 +33,16 @@ export function ProjectRow({ project }: Props) {
 
   function handleView() {
     window.open(projectUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  function handleRegeneratePassword() {
+    regeneratePassword.mutate(project.projectId, {
+      onSuccess: (data) => {
+        setNewPassword(data.password)
+        setShowPasswordModal(true)
+        toast.success('סיסמה חדשה נוצרה בהצלחה!')
+      }
+    })
   }
 
   return (
@@ -60,6 +76,16 @@ export function ProjectRow({ project }: Props) {
             </Button>
             <CopyButton text={projectUrl} label="העתק קישור" />
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRegeneratePassword}
+              disabled={regeneratePassword.isPending}
+              className="gap-2"
+            >
+              <KeyRound className="h-4 w-4" />
+              {regeneratePassword.isPending ? 'יוצר...' : 'סיסמה חדשה'}
+            </Button>
+            <Button
               variant="destructive"
               size="sm"
               onClick={() => setShowDeleteModal(true)}
@@ -78,6 +104,13 @@ export function ProjectRow({ project }: Props) {
         projectName={project.projectName}
         onConfirm={handleDelete}
         isDeleting={deleteProject.isPending}
+      />
+
+      <RegeneratePasswordModal
+        open={showPasswordModal}
+        onOpenChange={setShowPasswordModal}
+        password={newPassword}
+        projectName={project.projectName}
       />
     </>
   )

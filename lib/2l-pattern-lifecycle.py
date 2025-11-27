@@ -19,8 +19,10 @@ import sys
 import os
 import tempfile
 import shutil
+import glob
 from datetime import datetime
 from pathlib import Path
+from difflib import SequenceMatcher
 from typing import Dict, Optional, List
 
 
@@ -147,6 +149,240 @@ class PatternLifecycleManager:
             patterns = [p for p in patterns if p.get('status') == status]
 
         return patterns
+
+    def check_recurrence(self, pattern_id: str, current_iteration: int) -> Dict:
+        """Check if IMPLEMENTED pattern recurred in current iteration.
+
+        This method implements the core verification/regression logic:
+        1. Load current iteration's learnings
+        2. Compare against pattern's root_cause using similarity matching
+        3. If match found (>= 0.8 similarity + same category): Mark as REGRESSED
+        4. If 3 iterations passed without match: Mark as VERIFIED
+        5. Otherwise: Still monitoring
+
+        Args:
+            pattern_id: Pattern identifier (e.g., 'PATTERN-001')
+            current_iteration: Current global iteration number
+
+        Returns:
+            Dict with keys:
+                'recurred': bool - Whether pattern recurred this iteration
+                'status_update': str | None - New status (VERIFIED/REGRESSED) or None
+                'reason': str - Human-readable explanation
+                'exit_code': int - 0=monitoring, 1=verified, 2=regressed
+
+        Raises:
+            ValueError: If pattern not found or not in IMPLEMENTED status
+
+        Example (No recurrence, still monitoring):
+            >>> result = manager.check_recurrence('PATTERN-001', 9)
+            >>> result
+            {
+                'recurred': False,
+                'status_update': None,
+                'reason': 'Monitoring iteration 1 of 3',
+                'exit_code': 0
+            }
+
+        Example (Recurrence detected):
+            >>> result = manager.check_recurrence('PATTERN-001', 9)
+            >>> result
+            {
+                'recurred': True,
+                'status_update': 'REGRESSED',
+                'reason': 'Matched learning plan-9-iter-9-learning-002 (similarity: 0.87)',
+                'exit_code': 2
+            }
+
+        Example (Verified after 3 iterations):
+            >>> result = manager.check_recurrence('PATTERN-001', 12)
+            >>> result
+            {
+                'recurred': False,
+                'status_update': 'VERIFIED',
+                'reason': 'No recurrence in 3 iterations',
+                'exit_code': 1
+            }
+        """
+        # Load pattern data
+        data = self._load_learnings()
+        pattern = self._find_pattern(data, pattern_id)
+
+        if not pattern:
+            raise ValueError(f"Pattern {pattern_id} not found in global-learnings.yaml")
+
+        current_status = pattern.get('status', 'IDENTIFIED')
+
+        # Only check IMPLEMENTED patterns (VERIFIED/REGRESSED/IDENTIFIED skip monitoring)
+        if current_status != 'IMPLEMENTED':
+            return {
+                'recurred': False,
+                'status_update': None,
+                'reason': f'Pattern status is {current_status}, not IMPLEMENTED',
+                'exit_code': 0
+            }
+
+        # Get verification window boundaries
+        start_iteration = pattern.get('verification_start_iteration')
+        if not start_iteration:
+            return {
+                'recurred': False,
+                'status_update': None,
+                'reason': 'No verification_start_iteration set (pattern may predate iteration 8)',
+                'exit_code': 0
+            }
+
+        # Load current iteration learnings
+        try:
+            current_learnings = self._load_iteration_learnings(current_iteration)
+        except FileNotFoundError:
+            # Learnings file doesn't exist (iteration may have failed validation)
+            return {
+                'recurred': False,
+                'status_update': None,
+                'reason': f'Learnings for iteration {current_iteration} not found',
+                'exit_code': 0
+            }
+
+        # Check for recurrence (similarity matching)
+        pattern_root_cause = pattern.get('root_cause', '')
+        pattern_category = pattern.get('category', '')
+
+        for learning in current_learnings:
+            learning_root_cause = learning.get('root_cause', '')
+            learning_category = learning.get('category', '')
+
+            # Calculate similarity
+            similarity = self._calculate_similarity(pattern_root_cause, learning_root_cause)
+
+            # Check if recurrence (high similarity + same category)
+            if similarity >= 0.8 and pattern_category == learning_category:
+                # Recurrence detected! Mark as REGRESSED
+                metadata = {
+                    'plan_id': learning.get('plan_id'),
+                    'iteration': current_iteration,
+                    'recurrence_similarity': similarity,
+                    'matched_learning_id': learning.get('learning_id')
+                }
+
+                # Update pattern status to REGRESSED
+                self.update_status(pattern_id, 'REGRESSED', metadata)
+
+                return {
+                    'recurred': True,
+                    'status_update': 'REGRESSED',
+                    'reason': f'Matched learning {learning.get("learning_id")} (similarity: {similarity:.2f})',
+                    'exit_code': 2
+                }
+
+        # No recurrence detected - check if verification window passed
+        iterations_monitored = current_iteration - start_iteration + 1
+
+        if iterations_monitored >= 3:
+            # Verification window complete (3 iterations: start, start+1, start+2)
+            # Pattern verified!
+            metadata = {
+                'iteration': current_iteration,
+                'verification_iterations': iterations_monitored
+            }
+
+            # Update pattern status to VERIFIED
+            self.update_status(pattern_id, 'VERIFIED', metadata)
+
+            return {
+                'recurred': False,
+                'status_update': 'VERIFIED',
+                'reason': f'No recurrence in {iterations_monitored} iterations',
+                'exit_code': 1
+            }
+
+        # Still within monitoring window
+        return {
+            'recurred': False,
+            'status_update': None,
+            'reason': f'Monitoring iteration {iterations_monitored} of 3',
+            'exit_code': 0
+        }
+
+    def _calculate_similarity(self, text1: str, text2: str) -> float:
+        """
+        Calculate similarity ratio between two strings using Ratcliff-Obershelp algorithm.
+
+        This is copied from lib/2l-reflection-aggregator.py::calculate_similarity()
+        to avoid circular imports and ensure consistency in recurrence detection.
+
+        Args:
+            text1: First text string (e.g., pattern root_cause)
+            text2: Second text string (e.g., learning root_cause)
+
+        Returns:
+            Similarity ratio in range [0.0, 1.0]
+            - 0.0 = completely different
+            - 0.8+ = very similar (threshold for recurrence)
+            - 1.0 = identical
+
+        Example:
+            >>> self._calculate_similarity(
+            ...     "Missing exploration phase",
+            ...     "Exploration phase missing"
+            ... )
+            0.923  # High similarity, would trigger recurrence detection
+        """
+        # Normalize: lowercase for case-insensitive comparison
+        norm1 = text1.lower().strip()
+        norm2 = text2.lower().strip()
+
+        # Calculate similarity using SequenceMatcher
+        return SequenceMatcher(None, norm1, norm2).ratio()
+
+    def _load_iteration_learnings(self, iteration: int) -> List[Dict]:
+        """
+        Load learnings from specific iteration's learnings.yaml file.
+
+        Searches for learnings.yaml in .2L/plan-*/iteration-{iteration}/learnings.yaml
+
+        Args:
+            iteration: Global iteration number (e.g., 10)
+
+        Returns:
+            List of learning dictionaries, each with:
+            - learning_id: Unique identifier
+            - root_cause: Description of issue
+            - category: functionality/completeness/speed
+            - iteration: When learning was created
+
+        Raises:
+            FileNotFoundError: If no learnings file found for iteration
+
+        Example:
+            >>> learnings = self._load_iteration_learnings(10)
+            >>> learnings[0]
+            {
+                'learning_id': 'plan-9-iter-10-learning-001',
+                'root_cause': 'Missing error handling in recurrence detection',
+                'category': 'completeness',
+                'iteration': 10
+            }
+        """
+        # Find learnings file for this iteration
+        # Pattern: .2L/plan-*/iteration-{iteration}/learnings.yaml
+        pattern = f'.2L/plan-*/iteration-{iteration}/learnings.yaml'
+        matches = glob.glob(pattern)
+
+        if not matches:
+            raise FileNotFoundError(
+                f"No learnings file found for iteration {iteration}. "
+                f"Searched: {pattern}"
+            )
+
+        # Use first match (should only be one per iteration)
+        learnings_path = Path(matches[0])
+
+        with open(learnings_path, 'r') as f:
+            data = yaml.safe_load(f)
+
+        # Return learnings list (empty list if key missing)
+        return data.get('learnings', []) if data else []
 
     def _validate_transition(self, current: str, new: str):
         """Validate state machine transition.
@@ -295,6 +531,29 @@ Examples:
     list_parser.add_argument('--global-learnings', default='.2L/global-learnings.yaml',
                             help='Path to global learnings file')
 
+    # check-recurrence command
+    recurrence_parser = subparsers.add_parser(
+        'check-recurrence',
+        help='Check if pattern recurred in current iteration',
+        description='Monitors IMPLEMENTED patterns for recurrence and handles verification.'
+    )
+    recurrence_parser.add_argument(
+        '--pattern-id',
+        required=True,
+        help='Pattern identifier (e.g., PATTERN-001)'
+    )
+    recurrence_parser.add_argument(
+        '--current-iteration',
+        type=int,
+        required=True,
+        help='Current global iteration number'
+    )
+    recurrence_parser.add_argument(
+        '--global-learnings',
+        default='.2L/global-learnings.yaml',
+        help='Path to global learnings file (default: .2L/global-learnings.yaml)'
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -347,6 +606,25 @@ Examples:
                 filter_msg = f" with status {args.status}" if args.status else ""
                 print(f"No patterns found{filter_msg}")
                 sys.exit(0)
+
+        elif args.command == 'check-recurrence':
+            manager = PatternLifecycleManager(args.global_learnings)
+
+            try:
+                result = manager.check_recurrence(args.pattern_id, args.current_iteration)
+
+                # Output result for bash scripting
+                if result['status_update']:
+                    print(f"{result['status_update']}: {result['reason']}")
+                else:
+                    print(f"MONITORING: {result['reason']}")
+
+                # Exit with appropriate code (0=monitoring, 1=verified, 2=regressed)
+                sys.exit(result['exit_code'])
+
+            except ValueError as e:
+                print(f"ERROR: {e}", file=sys.stderr)
+                sys.exit(1)
 
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)

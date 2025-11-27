@@ -1201,6 +1201,91 @@ Create report at: {validation_dir}/validation-report.md"
         # Orchestrator Reflection: Merge learnings before iteration complete
         orchestrator_reflection(plan_id, global_iter, ITER_DIR)
 
+        # Pattern Lifecycle: Check for verification/regression
+        import subprocess
+        import os
+
+        print("   🔍 Checking pattern lifecycle status...")
+
+        try:
+            # Query for IMPLEMENTED patterns
+            query_result = subprocess.run([
+                "python3", "-c",
+                """
+import yaml
+import sys
+try:
+    with open('.2L/global-learnings.yaml', 'r') as f:
+        data = yaml.safe_load(f)
+        patterns = [p['pattern_id'] for p in data.get('patterns', [])
+                    if p.get('status') == 'IMPLEMENTED']
+        for pid in patterns:
+            print(pid)
+except Exception:
+    sys.exit(0)
+"""
+            ], capture_output=True, text=True, timeout=5)
+
+            implemented_patterns = [p.strip() for p in query_result.stdout.strip().split('\n') if p.strip()]
+
+            if not implemented_patterns:
+                print("      ℹ️  No IMPLEMENTED patterns to monitor")
+            else:
+                # Check each pattern for recurrence/verification
+                for pattern_id in implemented_patterns:
+                    check_result = subprocess.run([
+                        "python3",
+                        os.path.expanduser("~/.claude/lib/2l-pattern-lifecycle.py"),
+                        "check-recurrence",
+                        "--pattern-id", pattern_id,
+                        "--current-iteration", str(global_iter)
+                    ], capture_output=True, text=True, timeout=5)
+
+                    exit_code = check_result.returncode
+                    output = check_result.stdout.strip()
+
+                    if exit_code == 2:
+                        # Pattern regressed
+                        print(f"      ⚠️  {pattern_id} REGRESSED: {output}")
+                        # Emit pattern_regressed event
+                        subprocess.run([
+                            "bash", "-c",
+                            f"""
+                            if [ -f "$HOME/.claude/lib/2l-event-logger.sh" ]; then
+                                source "$HOME/.claude/lib/2l-event-logger.sh"
+                                log_2l_event "pattern_regressed" \
+                                             "Pattern {pattern_id} recurred in iteration {global_iter}" \
+                                             "lifecycle" \
+                                             "orchestrator"
+                            fi
+                            """
+                        ], timeout=2)
+
+                    elif exit_code == 1:
+                        # Pattern verified
+                        print(f"      ✅ {pattern_id} VERIFIED: {output}")
+                        # Emit pattern_verified event
+                        subprocess.run([
+                            "bash", "-c",
+                            f"""
+                            if [ -f "$HOME/.claude/lib/2l-event-logger.sh" ]; then
+                                source "$HOME/.claude/lib/2l-event-logger.sh"
+                                log_2l_event "pattern_verified" \
+                                             "Pattern {pattern_id} verified after 3 iterations" \
+                                             "lifecycle" \
+                                             "orchestrator"
+                            fi
+                            """
+                        ], timeout=2)
+                    else:
+                        # Still monitoring
+                        print(f"      📊 {pattern_id}: {output}")
+
+        except Exception as e:
+            print(f"      ⚠️  Pattern lifecycle check error: {e}")
+            # Non-blocking - continue iteration
+            pass
+
         return  # Iteration complete!
 
     # Phase 6: HEALING (if validation failed)
@@ -1439,6 +1524,91 @@ Create report at: {healing_dir}/validation-report.md"
 
             # Orchestrator Reflection: Merge learnings before iteration complete
             orchestrator_reflection(plan_id, global_iter, ITER_DIR)
+
+            # Pattern Lifecycle: Check for verification/regression
+            import subprocess
+            import os
+
+            print("   🔍 Checking pattern lifecycle status...")
+
+            try:
+                # Query for IMPLEMENTED patterns
+                query_result = subprocess.run([
+                    "python3", "-c",
+                    """
+import yaml
+import sys
+try:
+    with open('.2L/global-learnings.yaml', 'r') as f:
+        data = yaml.safe_load(f)
+        patterns = [p['pattern_id'] for p in data.get('patterns', [])
+                    if p.get('status') == 'IMPLEMENTED']
+        for pid in patterns:
+            print(pid)
+except Exception:
+    sys.exit(0)
+"""
+                ], capture_output=True, text=True, timeout=5)
+
+                implemented_patterns = [p.strip() for p in query_result.stdout.strip().split('\n') if p.strip()]
+
+                if not implemented_patterns:
+                    print("      ℹ️  No IMPLEMENTED patterns to monitor")
+                else:
+                    # Check each pattern for recurrence/verification
+                    for pattern_id in implemented_patterns:
+                        check_result = subprocess.run([
+                            "python3",
+                            os.path.expanduser("~/.claude/lib/2l-pattern-lifecycle.py"),
+                            "check-recurrence",
+                            "--pattern-id", pattern_id,
+                            "--current-iteration", str(global_iter)
+                        ], capture_output=True, text=True, timeout=5)
+
+                        exit_code = check_result.returncode
+                        output = check_result.stdout.strip()
+
+                        if exit_code == 2:
+                            # Pattern regressed
+                            print(f"      ⚠️  {pattern_id} REGRESSED: {output}")
+                            # Emit pattern_regressed event
+                            subprocess.run([
+                                "bash", "-c",
+                                f"""
+                                if [ -f "$HOME/.claude/lib/2l-event-logger.sh" ]; then
+                                    source "$HOME/.claude/lib/2l-event-logger.sh"
+                                    log_2l_event "pattern_regressed" \
+                                                 "Pattern {pattern_id} recurred in iteration {global_iter}" \
+                                                 "lifecycle" \
+                                                 "orchestrator"
+                                fi
+                                """
+                            ], timeout=2)
+
+                        elif exit_code == 1:
+                            # Pattern verified
+                            print(f"      ✅ {pattern_id} VERIFIED: {output}")
+                            # Emit pattern_verified event
+                            subprocess.run([
+                                "bash", "-c",
+                                f"""
+                                if [ -f "$HOME/.claude/lib/2l-event-logger.sh" ]; then
+                                    source "$HOME/.claude/lib/2l-event-logger.sh"
+                                    log_2l_event "pattern_verified" \
+                                                 "Pattern {pattern_id} verified after 3 iterations" \
+                                                 "lifecycle" \
+                                                 "orchestrator"
+                                fi
+                                """
+                            ], timeout=2)
+                        else:
+                            # Still monitoring
+                            print(f"      📊 {pattern_id}: {output}")
+
+            except Exception as e:
+                print(f"      ⚠️  Pattern lifecycle check error: {e}")
+                # Non-blocking - continue iteration
+                pass
 
             # EVENT: iteration_complete (After Healing)
             # Mark successful iteration completion after healing
@@ -1682,6 +1852,110 @@ def update_config_github_repo(plan_id, repo_url):
 
     write_yaml(config_file, config)
 
+
+```bash
+check_pattern_lifecycle() {
+    """
+    Pattern Lifecycle Monitoring - Check for pattern verification or regression.
+
+    Called after reflection creation to monitor IMPLEMENTED patterns for:
+    - Recurrence detection (pattern regressed if issue recurs)
+    - Verification after 3 clean iterations
+
+    Args:
+        global_iter: Current global iteration number
+
+    Returns:
+        0 (non-blocking - failures are logged but don't stop iteration)
+    """
+
+    local global_iter="$1"
+
+    echo "   🔍 Checking pattern lifecycle status..."
+
+    # Query for all IMPLEMENTED patterns from global-learnings.yaml
+    local implemented_patterns
+    implemented_patterns=$(python3 -c "
+import yaml
+import sys
+
+try:
+    with open('.2L/global-learnings.yaml', 'r') as f:
+        data = yaml.safe_load(f)
+        if not data or 'patterns' not in data:
+            sys.exit(0)
+        patterns = [p['pattern_id'] for p in data.get('patterns', [])
+                    if p.get('status') == 'IMPLEMENTED']
+        print('\n'.join(patterns))
+except FileNotFoundError:
+    # No global learnings file yet - graceful exit
+    sys.exit(0)
+except Exception as e:
+    # Other errors - log but don't block
+    print(f'Error querying patterns: {e}', file=sys.stderr)
+    sys.exit(0)
+" 2>/dev/null || echo "")
+
+    # Handle case: no patterns to monitor
+    if [ -z "$implemented_patterns" ]; then
+        echo "      ℹ️  No IMPLEMENTED patterns to monitor"
+        return 0
+    fi
+
+    # Check each IMPLEMENTED pattern for recurrence/verification
+    while IFS= read -r pattern_id; do
+        [ -z "$pattern_id" ] && continue
+
+        # Call pattern lifecycle manager's check-recurrence command
+        local result
+        result=$(python3 "$HOME/.claude/lib/2l-pattern-lifecycle.py" check-recurrence \
+            --pattern-id "$pattern_id" \
+            --current-iteration "$global_iter" \
+            --global-learnings ".2L/global-learnings.yaml" 2>&1)
+
+        local exit_code=$?
+
+        # Handle exit codes: 0=monitoring, 1=verified, 2=regressed
+        if [ $exit_code -eq 2 ]; then
+            # Pattern regressed (recurrence detected)
+            echo "      ⚠️  $pattern_id REGRESSED: $result"
+
+            # Emit pattern_regressed event if logging enabled
+            if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+                log_2l_event "pattern_regressed" \
+                             "Pattern ${pattern_id} recurred in iteration ${global_iter}" \
+                             "lifecycle" \
+                             "orchestrator"
+            fi
+
+        elif [ $exit_code -eq 1 ]; then
+            # Pattern verified (3 clean iterations)
+            echo "      ✅ $pattern_id VERIFIED: $result"
+
+            # Emit pattern_verified event if logging enabled
+            if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+                log_2l_event "pattern_verified" \
+                             "Pattern ${pattern_id} verified after 3 iterations" \
+                             "lifecycle" \
+                             "orchestrator"
+            fi
+
+        elif [ $exit_code -eq 0 ]; then
+            # Still monitoring (exit code 0)
+            echo "      📊 $pattern_id: $result"
+
+        else
+            # Unexpected error (log but don't block)
+            echo "      ⚠️  Error checking $pattern_id (exit code: $exit_code)"
+            [ -n "$result" ] && echo "         $result"
+        fi
+
+    done <<< "$implemented_patterns"
+
+    # Always return 0 (non-blocking)
+    return 0
+}
+```
 
 def create_iteration_reflection(plan_id, global_iter, iteration_dir):
     """

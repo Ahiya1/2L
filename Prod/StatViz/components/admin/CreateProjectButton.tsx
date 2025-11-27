@@ -21,8 +21,13 @@ export function CreateProjectButton({ onSuccess }: CreateProjectButtonProps) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="gap-2">
-        <Plus className="h-4 w-4" />
+      <Button
+        onClick={() => setOpen(true)}
+        variant="gradient"
+        size="lg"
+        className="gap-2 shadow-lg hover:shadow-xl"
+      >
+        <Plus className="h-5 w-5" />
         צור פרויקט חדש
       </Button>
 

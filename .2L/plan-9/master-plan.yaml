@@ -1,0 +1,66 @@
+plan_id: plan-9
+created_at: '2025-11-27T02:53:25.665806'
+status: PLANNED
+total_iterations: 3
+complexity: COMPLEX
+strategy: "This is a COMPLEX self-improvement initiative requiring careful phasing to balance\nfunctionality\
+  \ delivery with safety requirements.\n\nKey Strategic Principles:\n1. **Foundation First:** Iteration\
+  \ 1 delivers core value (solves PATTERN-001) while establishing\n   safety protocols for meta-circular\
+  \ self-modification\n2. **Incremental Enhancement:** Iterations 2-3 add reflection/aggregation/verification\
+  \ layers\n3. **Safety-Critical:** All iterations include git checkpoints, smoke tests, orchestrator\
+  \ exclusion\n4. **Performance-Aware:** Implement incremental aggregation from Day 1 to prevent scaling\
+  \ issues\n5. **User-Centric:** Focus on clear error messages, progress visibility, and rollback mechanisms\n\
+  \nArchitecture: Bash orchestration + Python utilities + YAML/JSONL storage + Task agent spawning\nRisk\
+  \ Profile: HIGH (meta-circular), mitigated by safety protocols and testing\nTimeline: 18-24 hours total\
+  \ (6-8h + 8-10h + 4-6h)"
+iterations:
+- iteration_id: 1
+  global_iteration: 8
+  name: Foundation - Real Exploration & Safety Infrastructure
+  vision: Implement real exploration phase in /2l-improve with safety protocols
+  scope: "**Primary Goals:**\n- Feature 1: Real Exploration Phase (COMPLETE) - Replace placeholder reports\
+    \ with Task agent spawning\n- Feature 4: Pattern Lifecycle (BASIC transitions: IDENTIFIED \u2192 IMPLEMENTED)\n\
+    - Safety infrastructure: Git checkpoints, orchestrator exclusion, smoke tests\n\n**Delivers:**\n-\
+    \ Solves PATTERN-001 (the motivating issue)\n- Safe foundation for meta-circular self-modification\n\
+    - 3 parallel explorers analyzing meditation space architecture\n\n**Acceptance Criteria:**\n- Lines\
+    \ 358-410 spawn 3 Task agents (not placeholders)\n- Explorer reports contain real analysis of 2L codebase\n\
+    - Safety checkpoint created before self-modification\n- Smoke tests validate 2L still functional after\
+    \ changes\n- Pattern status transitions: IDENTIFIED \u2192 IMPLEMENTED\n\n**Estimated Duration:**\
+    \ 6-8 hours\n**Risk Level:** HIGH (meta-circular safety critical)\n**Dependencies:** None (foundation\
+    \ layer)"
+  status: PENDING
+  dependencies: []
+- iteration_id: 2
+  global_iteration: 9
+  name: Processing - Reflection & Aggregation System
+  vision: Build automatic reflection creation and aggregation pipeline
+  scope: "**Primary Goals:**\n- Feature 2: Automatic Reflection Creation (COMPLETE) - Add reflection to\
+    \ /2l-mvp after iterations\n- Feature 5: Reflection Aggregation System (COMPLETE) - Convert reflections\
+    \ to patterns\n- Feature 3: Enhanced Vision Generation (BASIC integration of exploration context)\n\
+    \n**Delivers:**\n- Learning capture at iteration completion\n- Pattern detection from accumulated\
+    \ reflections\n- Vision enhancement with architectural context\n\n**Acceptance Criteria:**\n- /2l-mvp\
+    \ creates REFLECTION.md after successful iterations\n- Reflection aggregator groups similar issues\
+    \ with 0.8 similarity threshold\n- Vision generator reads exploration reports and enhances output\n\
+    - Events emitted: reflection_created, pattern_detected\n- Incremental aggregation prevents O(n\xB2\
+    ) scaling\n\n**Estimated Duration:** 8-10 hours\n**Risk Level:** MEDIUM (integration complexity)\n\
+    **Dependencies:** Iteration 1 (needs safety protocols established)"
+  status: PENDING
+  dependencies:
+  - 1
+- iteration_id: 3
+  global_iteration: 10
+  name: Verification - Pattern Lifecycle & Monitoring
+  vision: Complete pattern lifecycle with verification and regression detection
+  scope: "**Primary Goals:**\n- Feature 4: Pattern Lifecycle (ADVANCED states: IMPLEMENTED \u2192 VERIFIED,\
+    \ REGRESSED)\n- Feature 3: Enhanced Vision Generation (COMPLETE with full integration)\n- Verification\
+    \ loop: Monitor 3 iterations for pattern recurrence\n\n**Delivers:**\n- Full pattern lifecycle management\n\
+    - Automated verification after 3 non-recurrence iterations\n- Regression detection and alerts\n- Complete\
+    \ vision enhancement pipeline\n\n**Acceptance Criteria:**\n- Pattern states: VERIFIED when no recurrence\
+    \ in 3 iterations\n- Pattern states: REGRESSED when pattern recurs after implementation\n- Events\
+    \ emitted: pattern_verified, pattern_regressed\n- Vision includes all context: architecture, patterns,\
+    \ integration points\n- End-to-end self-improvement cycle validated with PATTERN-001\n\n**Estimated\
+    \ Duration:** 4-6 hours\n**Risk Level:** LOW (builds on established foundation)\n**Dependencies:**\
+    \ Iteration 2 (needs reflection pipeline)"
+  status: PENDING
+  dependencies:
+  - 2

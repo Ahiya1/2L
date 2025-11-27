@@ -78,32 +78,36 @@ export function SuccessModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" dir="rtl">
         <DialogHeader>
-          <div className="flex items-center gap-2 justify-center">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
-            <DialogTitle>הפרויקט נוצר בהצלחה!</DialogTitle>
+          <div className="flex items-center gap-2 justify-center mb-2">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            </div>
           </div>
-          <DialogDescription>
+          <DialogTitle className="text-center text-2xl font-bold">
+            הפרויקט נוצר בהצלחה!
+          </DialogTitle>
+          <DialogDescription className="text-center text-slate-600">
             הפרטים להלן. שלח את הקישור והסיסמה לסטודנט (בערוצים נפרדים למען האבטחה).
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 mt-2">
           {/* Project URL */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">קישור לפרויקט</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 block">קישור לפרויקט</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={projectUrl}
                 readOnly
                 dir="ltr"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-left text-sm"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-left text-sm font-mono"
               />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => copyToClipboard(projectUrl, 'url')}
-                className="gap-2"
+                className="gap-2 hover:bg-slate-50 transition-colors"
               >
                 {copiedUrl ? (
                   <>
@@ -121,21 +125,21 @@ export function SuccessModal({
           </div>
 
           {/* Password */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">סיסמה</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 block">סיסמה</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={password}
                 readOnly
                 dir="ltr"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-left font-mono"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-left font-mono text-lg tracking-wider"
               />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => copyToClipboard(password, 'password')}
-                className="gap-2"
+                className="gap-2 hover:bg-slate-50 transition-colors"
               >
                 {copiedPassword ? (
                   <>
@@ -179,11 +183,21 @@ export function SuccessModal({
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2 sm:justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex gap-2 sm:justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="hover:bg-slate-50 transition-colors"
+          >
             סגור
           </Button>
-          <Button onClick={handleCreateAnother}>צור פרויקט נוסף</Button>
+          <Button
+            variant="gradient"
+            onClick={handleCreateAnother}
+            className="shadow-lg"
+          >
+            צור פרויקט נוסף
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

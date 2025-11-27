@@ -1,73 +1,70 @@
-# Global 2L Configuration
-# Created: 2025-10-03
-
-# Current active plan
-current_plan: plan-5
-
-# Global iteration counter (across all plans)
+current_plan: plan-9
 global_iteration_counter: 7
-
-# Current iteration
-current_iteration: 7
-
-# Current phase (for resumability)
-current_phase: validation
-
-# Plans history
+current_iteration: 8
+current_phase: exploration
 plans:
-  - plan_id: plan-1
-    name: "2L System Tightening - Dashboard + MCP Cleanup + Healing Exploration"
-    status: COMPLETE
-    created_at: "2025-10-03T00:00:00Z"
-    vision_file: .2L/plan-1/vision.md
-    master_plan_file: .2L/plan-1/master-plan.yaml
-  - plan_id: plan-2
-    name: "2L Observability & Reliability Improvements"
-    status: COMPLETE
-    created_at: "2025-10-08T14:37:00Z"
-    vision_file: .2L/plan-2/vision.md
-    master_plan_file: .2L/plan-2/master-plan.yaml
-    iterations:
-      - 1
-      - 2
-  - plan_id: plan-3
-    name: "2L Production Readiness"
-    status: COMPLETE
-    created_at: "2025-10-10T00:00:00Z"
-    vision_file: .2L/plan-3/vision.md
-    master_plan_file: .2L/plan-3/master-plan.yaml
-    master_exploration:
-      num_explorers: 4
-      complexity_level: "COMPLEX"
-    iterations:
-      - 1
-      - 2
-  - plan_id: plan-4
-    name: "2L Agent SDK Knowledge Integration"
-    status: COMPLETE
-    created_at: "2025-10-13T00:00:00Z"
-    completed_at: "2025-10-13T15:37:00Z"
-    vision_file: .2L/plan-4/vision.md
-    master_plan_file: .2L/plan-4/master-plan.yaml
-    master_exploration:
-      num_explorers: 4
-      complexity_level: "COMPLEX"
-    iterations:
-      - 3
-      - 4
-      - 5
-  - plan_id: plan-5
-    name: "2L Self-Reflection Infrastructure"
-    status: IN_PROGRESS
-    created_at: "2025-11-19T02:55:00Z"
-    vision_file: .2L/plan-5/vision.md
-    master_plan_file: .2L/plan-5/master-plan.yaml
-    master_exploration:
-      num_explorers: 4
-      complexity_level: "COMPLEX"
-    iterations:
-      - 6
-      - 7
-
-# Next available iteration number
+- plan_id: plan-1
+  name: 2L System Tightening - Dashboard + MCP Cleanup + Healing Exploration
+  status: COMPLETE
+  created_at: '2025-10-03T00:00:00Z'
+  vision_file: .2L/plan-1/vision.md
+  master_plan_file: .2L/plan-1/master-plan.yaml
+- plan_id: plan-2
+  name: 2L Observability & Reliability Improvements
+  status: COMPLETE
+  created_at: '2025-10-08T14:37:00Z'
+  vision_file: .2L/plan-2/vision.md
+  master_plan_file: .2L/plan-2/master-plan.yaml
+  iterations:
+  - 1
+  - 2
+- plan_id: plan-3
+  name: 2L Production Readiness
+  status: COMPLETE
+  created_at: '2025-10-10T00:00:00Z'
+  vision_file: .2L/plan-3/vision.md
+  master_plan_file: .2L/plan-3/master-plan.yaml
+  master_exploration:
+    num_explorers: 4
+    complexity_level: COMPLEX
+  iterations:
+  - 1
+  - 2
+- plan_id: plan-4
+  name: 2L Agent SDK Knowledge Integration
+  status: COMPLETE
+  created_at: '2025-10-13T00:00:00Z'
+  completed_at: '2025-10-13T15:37:00Z'
+  vision_file: .2L/plan-4/vision.md
+  master_plan_file: .2L/plan-4/master-plan.yaml
+  master_exploration:
+    num_explorers: 4
+    complexity_level: COMPLEX
+  iterations:
+  - 3
+  - 4
+  - 5
+- plan_id: plan-5
+  name: 2L Self-Reflection Infrastructure
+  status: IN_PROGRESS
+  created_at: '2025-11-19T02:55:00Z'
+  vision_file: .2L/plan-5/vision.md
+  master_plan_file: .2L/plan-5/master-plan.yaml
+  master_exploration:
+    num_explorers: 4
+    complexity_level: COMPLEX
+  iterations:
+  - 6
+  - 7
+- plan_id: plan-9
+  name: 2L Self-Improvement - Complete /2l-improve Implementation
+  status: PLANNED
+  created_at: '2025-11-27T02:00:00Z'
+  vision_file: .2L/plan-9/vision.md
+  description: 'Implement complete self-improvement cycle: real exploration, automatic
+    reflections, pattern lifecycle, and verification'
+  master_exploration:
+    num_explorers: 4
+    complexity_level: COMPLEX
+  master_plan_file: .2L/plan-9/master-plan.yaml
 next_iteration_number: 8

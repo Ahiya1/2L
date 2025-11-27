@@ -264,11 +264,7 @@ if [ "$EVENT_LOGGING_ENABLED" = true ]; then
                  "2l-improve"
 fi
 
-# Step 3: Vision Generation (Builder-2 implementation)
-echo "📊 Step 3: Vision Generation"
-echo ""
-
-# Determine next plan ID
+# Determine next plan ID (needed for exploration phase)
 next_plan_id=$(python3 -c "
 import os
 import re
@@ -280,6 +276,265 @@ else:
     print('plan-1')
 " 2>/dev/null || echo "plan-6")
 
+# Step 2.5: System Exploration - Analyze 2L's own codebase
+echo "📊 Step 2.5: System Exploration"
+echo "   Analyzing 2L's own codebase to inform improvement vision..."
+echo ""
+
+# Create exploration directory
+exploration_dir=".2L/${next_plan_id}/exploration"
+mkdir -p "$exploration_dir"
+
+# Create exploration context file
+exploration_context="$exploration_dir/context.md"
+cat > "$exploration_context" << EOF
+# 2L System Exploration Context
+
+**Purpose:** Self-improvement exploration - analyze 2L's own codebase
+
+**Selected Pattern:** ${selected_pattern_id} - ${pattern_name}
+**Root Cause:** ${root_cause}
+**Proposed Solution:** ${proposed_solution}
+
+## Exploration Goals
+
+Analyze the meditation space (2L's own codebase) to understand:
+
+1. **Current Architecture** - How agents, commands, and orchestration work
+2. **Technology Patterns** - Bash/Python/YAML patterns used throughout
+3. **Integration Points** - Where improvements should be applied
+
+## Target Codebase
+
+- **Location:** ~/Ahiya/2L (meditation space)
+- **Key Directories:**
+  - agents/ - Agent prompts (2l-builder, 2l-planner, 2l-integrator, etc.)
+  - commands/ - Slash commands (2l-mvp, 2l-improve, etc.)
+  - lib/ - Python and bash utilities
+  - templates/ - Vision and prompt templates
+
+## Focus Areas by Explorer
+
+### Explorer 1: 2L Architecture & Agent Flow
+- How does /2l-mvp orchestrate agents?
+- What are agent responsibilities and interfaces?
+- How do agents communicate (reports, events)?
+- Document orchestration patterns
+
+### Explorer 2: Tech Stack & Patterns
+- Bash patterns in commands/
+- Python patterns in lib/
+- YAML structure in .2L/
+- Event logging and observability
+- Report generation patterns
+
+### Explorer 3: Related to Pattern ${selected_pattern_id}
+- Where in the codebase does this pattern's root cause live?
+- Which agents/commands are affected?
+- What files need modification?
+- Provide specific integration guidance
+
+## Output Format
+
+Standard explorer reports at:
+- $exploration_dir/explorer-1-report.md
+- $exploration_dir/explorer-2-report.md
+- $exploration_dir/explorer-3-report.md
+
+EOF
+
+echo "   ✅ Exploration context created: $exploration_context"
+echo ""
+
+# Emit exploration start event
+if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+    log_2l_event "exploration_start" \
+                 "Starting system exploration for ${selected_pattern_id}" \
+                 "exploration" \
+                 "2l-improve"
+fi
+
+# Spawn explorers (3 parallel explorers for self-analysis)
+echo "   Spawning 3 explorers to analyze 2L system..."
+echo ""
+
+# Create exploration context file
+cat > "$exploration_dir/context.md" << EOF
+# Exploration Context
+
+**Pattern:** ${selected_pattern_id}
+**Name:** ${pattern_name}
+**Root Cause:** ${root_cause}
+**Proposed Solution:** ${proposed_solution}
+
+**Meditation Space:** ~/Ahiya/2L
+**Focus:** Analyze 2L framework architecture to enable informed improvements
+EOF
+
+# Spawn Explorer 1: Architecture Analysis
+if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+    log_2l_event "agent_spawn" \
+                 "Explorer-1: Architecture Analysis" \
+                 "exploration" \
+                 "explorer-1"
+fi
+
+Use Task tool with subagent_type: "2l-explorer"
+
+Prompt:
+"Explorer 1: Architecture & Structure
+
+Iteration: ${global_iter}
+Context: ${exploration_dir}/context.md
+Output: ${exploration_dir}/explorer-1-report.md
+
+Focus Area: 2L Architecture & Agent Flow
+
+Analyze the following in meditation space (~/Ahiya/2L):
+- How does /2l-mvp orchestrate agents? (commands/2l-mvp.md)
+- What are agent responsibilities? (agents/*.md)
+- How do agents communicate? (reports, events)
+- What is the Task spawning pattern?
+- Integration points for improvements
+
+Create comprehensive report at: ${exploration_dir}/explorer-1-report.md
+
+Include sections:
+- Executive Summary
+- Architecture Overview
+- Agent Communication Patterns
+- Integration Points
+- Recommendations"
+
+# Spawn Explorer 2: Tech Patterns
+if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+    log_2l_event "agent_spawn" \
+                 "Explorer-2: Tech Patterns" \
+                 "exploration" \
+                 "explorer-2"
+fi
+
+Use Task tool with subagent_type: "2l-explorer"
+
+Prompt:
+"Explorer 2: Technology Patterns & Dependencies
+
+Iteration: ${global_iter}
+Context: ${exploration_dir}/context.md
+Output: ${exploration_dir}/explorer-2-report.md
+
+Focus Area: Tech Stack & Patterns
+
+Analyze the following in meditation space (~/Ahiya/2L):
+- Bash patterns (commands/*.md)
+- Python utilities (lib/*.py)
+- YAML structures (.2L/global-learnings.yaml)
+- Event logging patterns (lib/2l-event-logger.sh)
+- File organization and naming conventions
+
+Create comprehensive report at: ${exploration_dir}/explorer-2-report.md
+
+Include sections:
+- Executive Summary
+- Technology Stack Overview
+- Code Patterns and Conventions
+- Affected Components
+- Recommendations"
+
+# Spawn Explorer 3: Pattern-Specific Analysis
+if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+    log_2l_event "agent_spawn" \
+                 "Explorer-3: Pattern Analysis" \
+                 "exploration" \
+                 "explorer-3"
+fi
+
+Use Task tool with subagent_type: "2l-explorer"
+
+Prompt:
+"Explorer 3: Pattern-Specific Analysis
+
+Iteration: ${global_iter}
+Context: ${exploration_dir}/context.md
+Output: ${exploration_dir}/explorer-3-report.md
+
+Focus Area: ${selected_pattern_id} - ${pattern_name}
+
+Analyze the following in meditation space (~/Ahiya/2L):
+- Root cause location in codebase
+- Affected files/functions (exact paths)
+- Integration guidance for builders
+- Complexity assessment
+
+Root Cause: ${root_cause}
+Proposed Solution: ${proposed_solution}
+
+Create comprehensive report at: ${exploration_dir}/explorer-3-report.md
+
+Include sections:
+- Executive Summary
+- Root Cause Analysis
+- Affected Components (with exact file paths)
+- Integration Points
+- Recommendations
+- Complexity Assessment"
+
+# Wait for all explorers to complete with timeout
+echo "   Waiting for 3 explorers to complete..."
+max_wait=300  # 5 minutes
+elapsed=0
+all_complete=false
+
+while [ $elapsed -lt $max_wait ]; do
+    if [ -f "$exploration_dir/explorer-1-report.md" ] && \
+       [ -f "$exploration_dir/explorer-2-report.md" ] && \
+       [ -f "$exploration_dir/explorer-3-report.md" ]; then
+        all_complete=true
+        break
+    fi
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
+
+if [ "$all_complete" = false ]; then
+    echo "   ❌ ERROR: Explorer timeout after ${max_wait}s"
+    for i in 1 2 3; do
+        [ ! -f "$exploration_dir/explorer-${i}-report.md" ] && \
+            echo "      Missing: explorer-${i}-report.md"
+    done
+    exit 1
+fi
+
+echo "   ✅ All explorers completed (${elapsed}s)"
+
+# Validate reports
+for i in 1 2 3; do
+    report="$exploration_dir/explorer-${i}-report.md"
+
+    if grep -q "Placeholder" "$report"; then
+        echo "   ⚠️  WARNING: explorer-${i} contains placeholder text"
+    fi
+
+    line_count=$(wc -l < "$report")
+    if [ $line_count -lt 50 ]; then
+        echo "   ⚠️  WARNING: explorer-${i} seems short (${line_count} lines)"
+    fi
+done
+echo ""
+
+# Emit exploration complete event
+if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+    log_2l_event "exploration_complete" \
+                 "System exploration complete (3 reports in ${elapsed}s)" \
+                 "exploration" \
+                 "2l-improve"
+fi
+
+# Step 3: Vision Generation
+echo "📊 Step 3: Vision Generation"
+echo ""
+
+# Vision path (next_plan_id already determined in Step 2.5)
 vision_path=".2L/${next_plan_id}/vision.md"
 
 echo "   Next plan ID: $next_plan_id"
@@ -306,7 +561,8 @@ python3 ~/.claude/lib/2l-vision-generator.py \
     --pattern-json "$selected_pattern_json" \
     --template ~/.claude/templates/improvement-vision.md \
     --output "$vision_path" \
-    --plan-id "$next_plan_id"
+    --plan-id "$next_plan_id" \
+    --exploration-dir "$exploration_dir"
 
 if [ $? -ne 0 ]; then
     echo "   ❌ ERROR: Vision generation failed"
@@ -314,6 +570,13 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "   ✅ Vision generated: $vision_path"
+
+# Verify exploration context included
+if grep -q "Exploration Findings" "$vision_path"; then
+    echo "      ✓ Exploration context included"
+else
+    echo "      ⚠️  WARNING: Vision may lack exploration context"
+fi
 
 # Emit vision generated event
 if [ "$EVENT_LOGGING_ENABLED" = true ]; then
@@ -697,27 +960,59 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     git diff --name-only "${checkpoint_tag}..HEAD" | sed 's/^/      - /'
     echo ""
 
-    # Update pattern status
-    echo "   Step 5.7: Pattern Status Update"
-    python3 ~/.claude/lib/2l-yaml-helpers.py update_pattern_status \
-        --global-learnings "$GLOBAL_LEARNINGS" \
-        --pattern-id "$selected_pattern_id" \
-        --status "IMPLEMENTED" \
-        --metadata-json "{
-            \"implemented_in_plan\": \"${next_plan_id}\",
-            \"implemented_at\": \"$(date -Iseconds)\",
-            \"vision_file\": \"${vision_path}\"
-        }"
-
-    echo "   ✅ Pattern status updated: IDENTIFIED → IMPLEMENTED"
+    # Run smoke tests to validate 2L framework health
+    echo "   Step 5.7: Post-Modification Smoke Tests"
+    echo "   Running smoke tests to validate 2L framework health..."
     echo ""
 
-    # Emit status updated event
-    if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-        log_2l_event "status_updated" \
-                     "${selected_pattern_id}: IDENTIFIED → IMPLEMENTED" \
-                     "status_update" \
-                     "2l-improve"
+    if [ -f "$HOME/.claude/lib/2l-smoke-tests.sh" ]; then
+        bash "$HOME/.claude/lib/2l-smoke-tests.sh"
+
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "   ✅ Smoke tests passed - 2L framework healthy"
+            echo ""
+        else
+            echo ""
+            echo "   ❌ CRITICAL: Smoke tests failed"
+            echo "      Self-modification may have broken 2L framework"
+            echo "      Rollback recommended: git reset --hard $checkpoint_tag"
+            echo ""
+            exit 2
+        fi
+    else
+        echo "   ⚠️  WARNING: Smoke test script not found"
+        echo "      Skipping validation (consider this risky)"
+        echo ""
+    fi
+
+    # Update pattern status using lifecycle manager
+    echo "   Step 5.8: Pattern Lifecycle Update"
+    echo "   Updating pattern status to IMPLEMENTED..."
+
+    python3 "$HOME/.claude/lib/2l-pattern-lifecycle.py" update \
+        --pattern-id "$selected_pattern_id" \
+        --status "IMPLEMENTED" \
+        --plan-id "$next_plan_id" \
+        --iteration "$global_iter" \
+        --global-learnings ".2L/global-learnings.yaml"
+
+    if [ $? -eq 0 ]; then
+        echo "   ✅ Pattern status: IDENTIFIED → IMPLEMENTED"
+        echo "   📊 Monitoring next 3 iterations for recurrence"
+        echo ""
+
+        # Emit pattern_implemented event
+        if [ "$EVENT_LOGGING_ENABLED" = true ]; then
+            log_2l_event "pattern_implemented" \
+                         "Pattern ${selected_pattern_id} implemented in ${next_plan_id}" \
+                         "self_modification" \
+                         "2l-improve"
+        fi
+    else
+        echo "   ⚠️  WARNING: Pattern status update failed"
+        echo "      Pattern remains in previous state"
+        echo ""
     fi
 
     # Success summary

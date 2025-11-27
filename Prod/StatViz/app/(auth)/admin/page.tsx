@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
   return (
     <div className="bg-white rounded-lg shadow-xl p-8 border border-slate-200">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-3xl font-bold gradient-text mb-2">
           StatViz
         </h1>
         <p className="text-slate-600">

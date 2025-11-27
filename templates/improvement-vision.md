@@ -51,6 +51,10 @@ Fixing this pattern will prevent similar failures in future iterations, reducing
 **Components to Modify:**
 {AFFECTED_COMPONENTS_LIST}
 
+**Exploration Findings:**
+
+{EXPLORATION_CONTEXT}
+
 **Validation Strategy:**
 - Verify fix prevents recurrence
 - Test against historical failure scenarios

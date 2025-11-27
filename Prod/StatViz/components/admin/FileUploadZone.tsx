@@ -53,18 +53,18 @@ export function FileUploadZone({
   const rejectionError = fileRejections[0]?.errors[0]?.message
 
   return (
-    <div>
-      <label className="block text-sm font-medium mb-2">{label}</label>
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-slate-700">{label}</label>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200 ${
           isDragActive
-            ? 'border-blue-500 bg-blue-50'
+            ? 'border-blue-500 bg-blue-50 scale-[1.02]'
             : selectedFile
             ? 'border-green-500 bg-green-50'
             : error || rejectionError
-            ? 'border-red-500 bg-red-50'
-            : 'border-gray-300 hover:border-gray-400'
+            ? 'border-destructive bg-red-50'
+            : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50/30'
         }`}
       >
         <input {...getInputProps()} />
@@ -75,7 +75,7 @@ export function FileUploadZone({
               <File className="h-5 w-5 text-green-600" />
               <div className="flex-1">
                 <p className="font-medium text-green-700">{selectedFile.name}</p>
-                <p className="text-sm text-gray-600">{formatFileSize(selectedFile.size)}</p>
+                <p className="text-sm text-slate-600">{formatFileSize(selectedFile.size)}</p>
               </div>
             </div>
             <Button
@@ -83,20 +83,22 @@ export function FileUploadZone({
               variant="ghost"
               size="sm"
               onClick={handleRemove}
-              className="mr-2"
+              className="mr-2 hover:bg-red-100 hover:text-red-600 transition-colors"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         ) : (
-          <div className="text-gray-600">
-            <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+          <div className="text-slate-600">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 mb-3">
+              <Upload className="h-6 w-6 text-white" />
+            </div>
             {isDragActive ? (
               <p className="text-blue-600 font-medium">שחרר לבחירת הקובץ</p>
             ) : (
               <>
-                <p className="font-medium">גרור קובץ לכאן או לחץ לבחירה</p>
-                <p className="text-sm mt-1">מקסימום 50 MB</p>
+                <p className="font-medium text-slate-700">גרור קובץ לכאן או לחץ לבחירה</p>
+                <p className="text-sm mt-1 text-slate-500">מקסימום 50 MB</p>
               </>
             )}
           </div>
@@ -104,7 +106,7 @@ export function FileUploadZone({
       </div>
 
       {(error || rejectionError) && (
-        <p className="text-red-600 text-sm mt-1">{error || rejectionError}</p>
+        <p className="text-sm text-destructive">{error || rejectionError}</p>
       )}
     </div>
   )

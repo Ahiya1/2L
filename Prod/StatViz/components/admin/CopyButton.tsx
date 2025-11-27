@@ -48,11 +48,15 @@ export function CopyButton({ text, label = 'העתק', size = 'sm' }: Props) {
       variant="outline"
       size={size}
       onClick={copyToClipboard}
-      className="gap-2"
+      className={`gap-2 transition-all duration-200 ${
+        copied
+          ? 'bg-green-50 border-green-500 text-green-700 hover:bg-green-50'
+          : 'hover:bg-slate-50'
+      }`}
     >
       {copied ? (
         <>
-          <Check className="h-4 w-4 text-green-600" />
+          <Check className="h-4 w-4 text-green-600 animate-in zoom-in-50 duration-200" />
           הועתק!
         </>
       ) : (

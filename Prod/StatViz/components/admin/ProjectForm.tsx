@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Loader2 } from 'lucide-react'
 import { CreateProjectFormSchema, CreateProjectFormData } from '@/lib/validation/schemas'
 import { generatePassword } from '@/lib/utils/password-generator'
 import { uploadWithProgress } from '@/lib/upload/client'
@@ -144,76 +144,88 @@ export function ProjectForm({ onSuccess }: ProjectFormProps) {
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
         {/* Project Name */}
-        <div>
-          <Label htmlFor="project_name">שם הפרויקט</Label>
+        <div className="space-y-2">
+          <Label htmlFor="project_name" className="text-sm font-medium text-slate-700">
+            שם הפרויקט
+          </Label>
           <Input
             id="project_name"
             {...register('project_name')}
             placeholder="הזן שם פרויקט בעברית"
-            className={errors.project_name ? 'border-red-500' : ''}
+            className={errors.project_name ? 'border-destructive focus-visible:ring-destructive' : ''}
+            disabled={isSubmitting || isUploading}
           />
           {errors.project_name && (
-            <p className="text-red-600 text-sm mt-1">{errors.project_name.message}</p>
+            <p className="text-sm text-destructive">{errors.project_name.message}</p>
           )}
         </div>
 
         {/* Student Name */}
-        <div>
-          <Label htmlFor="student_name">שם הסטודנט</Label>
+        <div className="space-y-2">
+          <Label htmlFor="student_name" className="text-sm font-medium text-slate-700">
+            שם הסטודנט
+          </Label>
           <Input
             id="student_name"
             {...register('student_name')}
             placeholder="שם מלא של הסטודנט"
-            className={errors.student_name ? 'border-red-500' : ''}
+            className={errors.student_name ? 'border-destructive focus-visible:ring-destructive' : ''}
+            disabled={isSubmitting || isUploading}
           />
           {errors.student_name && (
-            <p className="text-red-600 text-sm mt-1">{errors.student_name.message}</p>
+            <p className="text-sm text-destructive">{errors.student_name.message}</p>
           )}
         </div>
 
         {/* Student Email */}
-        <div>
-          <Label htmlFor="student_email">אימייל סטודנט</Label>
+        <div className="space-y-2">
+          <Label htmlFor="student_email" className="text-sm font-medium text-slate-700">
+            אימייל סטודנט
+          </Label>
           <Input
             id="student_email"
             type="email"
             dir="ltr"
-            className={`text-left ${errors.student_email ? 'border-red-500' : ''}`}
+            className={`text-left ${errors.student_email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             {...register('student_email')}
             placeholder="student@example.com"
+            disabled={isSubmitting || isUploading}
           />
           {errors.student_email && (
-            <p className="text-red-600 text-sm mt-1">{errors.student_email.message}</p>
+            <p className="text-sm text-destructive">{errors.student_email.message}</p>
           )}
         </div>
 
         {/* Research Topic */}
-        <div>
-          <Label htmlFor="research_topic">נושא המחקר</Label>
+        <div className="space-y-2">
+          <Label htmlFor="research_topic" className="text-sm font-medium text-slate-700">
+            נושא המחקר
+          </Label>
           <Textarea
             id="research_topic"
             {...register('research_topic')}
             placeholder="תאור קצר של נושא המחקר"
             rows={4}
-            className={errors.research_topic ? 'border-red-500' : ''}
+            className={errors.research_topic ? 'border-destructive focus-visible:ring-destructive' : ''}
+            disabled={isSubmitting || isUploading}
           />
           {errors.research_topic && (
-            <p className="text-red-600 text-sm mt-1">{errors.research_topic.message}</p>
+            <p className="text-sm text-destructive">{errors.research_topic.message}</p>
           )}
         </div>
 
         {/* Password */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label>סיסמה</Label>
-            <label className="flex items-center gap-2 cursor-pointer">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium text-slate-700">סיסמה</Label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600 hover:text-slate-900 transition-colors">
               <input
                 type="checkbox"
                 checked={autoGeneratePassword}
                 onChange={handleAutoGenerateToggle}
                 className="rounded"
               />
-              <span className="text-sm">צור סיסמה אוטומטית</span>
+              <span>צור סיסמה אוטומטית</span>
             </label>
           </div>
 
@@ -223,14 +235,16 @@ export function ProjectForm({ onSuccess }: ProjectFormProps) {
                 value={currentPassword}
                 readOnly
                 dir="ltr"
-                className="text-left bg-gray-50 font-mono"
+                className="text-left bg-slate-50 font-mono"
+                disabled={isSubmitting || isUploading}
               />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleRegeneratePassword}
-                className="gap-2"
+                className="gap-2 hover:bg-slate-50 transition-colors"
+                disabled={isSubmitting || isUploading}
               >
                 <RefreshCw className="h-4 w-4" />
                 חדש
@@ -241,12 +255,13 @@ export function ProjectForm({ onSuccess }: ProjectFormProps) {
               {...register('password')}
               type="text"
               dir="ltr"
-              className={`text-left ${errors.password ? 'border-red-500' : ''}`}
+              className={`text-left ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
               placeholder="לפחות 6 תווים"
+              disabled={isSubmitting || isUploading}
             />
           )}
           {errors.password && (
-            <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+            <p className="text-sm text-destructive">{errors.password.message}</p>
           )}
         </div>
 
@@ -274,12 +289,29 @@ export function ProjectForm({ onSuccess }: ProjectFormProps) {
         {isUploading && <UploadProgress docxProgress={docxProgress} htmlProgress={htmlProgress} />}
 
         {/* Form Actions */}
-        <div className="flex gap-3 justify-end pt-4">
-          <Button type="button" variant="outline" disabled={isSubmitting || isUploading}>
+        <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting || isUploading}
+            className="hover:bg-slate-50 transition-colors"
+          >
             ביטול
           </Button>
-          <Button type="submit" disabled={isSubmitting || isUploading || !docxFile || !htmlFile}>
-            {isUploading ? 'מעלה...' : isSubmitting ? 'יוצר...' : 'צור פרויקט'}
+          <Button
+            type="submit"
+            variant="gradient"
+            disabled={isSubmitting || isUploading || !docxFile || !htmlFile}
+            className="gap-2"
+          >
+            {isUploading || isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {isUploading ? 'מעלה...' : 'יוצר...'}
+              </>
+            ) : (
+              'צור פרויקט'
+            )}
           </Button>
         </div>
       </form>

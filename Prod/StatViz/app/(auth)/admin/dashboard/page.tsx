@@ -1,41 +1,44 @@
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/db/client'
-import jwt from 'jsonwebtoken'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardShell } from '@/components/admin/DashboardShell'
 import { ProjectsContainer } from '@/components/admin/ProjectsContainer'
+import { Loader2 } from 'lucide-react'
 
-async function verifyAdminToken(token: string): Promise<boolean> {
-  try {
-    // Verify JWT signature and expiration
-    jwt.verify(token, process.env.JWT_SECRET!)
+export default function DashboardPage() {
+  const router = useRouter()
+  const [isChecking, setIsChecking] = useState(true)
 
-    // Check database session
-    const session = await prisma.adminSession.findUnique({
-      where: { token }
-    })
+  useEffect(() => {
+    // Check authentication on mount
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/admin/projects', {
+          credentials: 'include',
+        })
 
-    if (!session) return false
-
-    // Check expiration
-    if (session.expiresAt < new Date()) {
-      // Expired - delete session
-      await prisma.adminSession.delete({ where: { token } })
-      return false
+        if (!response.ok) {
+          // Not authenticated, redirect to login
+          router.push('/admin')
+        }
+      } catch {
+        // Error checking auth, redirect to login
+        router.push('/admin')
+      } finally {
+        setIsChecking(false)
+      }
     }
 
-    return true
-  } catch (_error) {
-    return false
-  }
-}
+    checkAuth()
+  }, [router])
 
-export default async function DashboardPage() {
-  // Server-side auth check
-  const token = cookies().get('admin_token')?.value
-
-  if (!token || !(await verifyAdminToken(token))) {
-    redirect('/admin')
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (

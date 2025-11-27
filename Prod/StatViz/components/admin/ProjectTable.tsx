@@ -57,58 +57,58 @@ export function ProjectTable({ projects }: Props) {
   })
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-lg border border-slate-200 shadow-sm bg-white overflow-hidden">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-right">
+        <TableHeader className="bg-slate-50">
+          <TableRow className="hover:bg-slate-50">
+            <TableHead className="text-right font-semibold text-slate-700">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleSort('projectName')}
-                className="gap-2 font-medium"
+                className="gap-2 hover:bg-slate-100 transition-colors"
               >
                 שם הפרויקט
                 {sortField === 'projectName' && <ArrowUpDown className="h-4 w-4" />}
               </Button>
             </TableHead>
-            <TableHead className="text-right">
+            <TableHead className="text-right font-semibold text-slate-700">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleSort('studentName')}
-                className="gap-2 font-medium"
+                className="gap-2 hover:bg-slate-100 transition-colors"
               >
                 שם הסטודנט
                 {sortField === 'studentName' && <ArrowUpDown className="h-4 w-4" />}
               </Button>
             </TableHead>
-            <TableHead className="text-left" dir="ltr">
+            <TableHead className="text-left font-semibold text-slate-700" dir="ltr">
               אימייל סטודנט
             </TableHead>
-            <TableHead className="text-center">
+            <TableHead className="text-center font-semibold text-slate-700">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleSort('createdAt')}
-                className="gap-2 font-medium"
+                className="gap-2 hover:bg-slate-100 transition-colors"
               >
                 נוצר בתאריך
                 {sortField === 'createdAt' && <ArrowUpDown className="h-4 w-4" />}
               </Button>
             </TableHead>
-            <TableHead className="text-center">
+            <TableHead className="text-center font-semibold text-slate-700">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleSort('viewCount')}
-                className="gap-2 font-medium"
+                className="gap-2 hover:bg-slate-100 transition-colors"
               >
                 צפיות
                 {sortField === 'viewCount' && <ArrowUpDown className="h-4 w-4" />}
               </Button>
             </TableHead>
-            <TableHead className="text-left">פעולות</TableHead>
+            <TableHead className="text-left font-semibold text-slate-700">פעולות</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

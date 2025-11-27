@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 const LoginSchema = z.object({
   username: z.string().min(1, 'שם משתמש נדרש'),
@@ -36,30 +37,42 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
       <div className="space-y-2">
-        <Label htmlFor="username">שם משתמש</Label>
+        <Label htmlFor="username" className="text-sm font-medium text-slate-700">
+          שם משתמש
+        </Label>
         <Input
           id="username"
           type="text"
           {...register('username')}
           placeholder="הזן שם משתמש"
-          className={errors.username ? 'border-destructive' : ''}
+          className={cn(
+            'transition-all',
+            errors.username ? 'border-destructive focus-visible:ring-destructive' : ''
+          )}
           disabled={isLoading}
           autoComplete="username"
         />
         {errors.username && (
-          <p className="text-sm text-destructive">{errors.username.message}</p>
+          <p className="text-sm text-destructive flex items-center gap-1">
+            {errors.username.message}
+          </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">סיסמה</Label>
+        <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+          סיסמה
+        </Label>
         <div className="relative">
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             {...register('password')}
             placeholder="הזן סיסמה"
-            className={errors.password ? 'border-destructive' : ''}
+            className={cn(
+              'transition-all pl-10',
+              errors.password ? 'border-destructive focus-visible:ring-destructive' : ''
+            )}
             disabled={isLoading}
             autoComplete="current-password"
           />
@@ -77,16 +90,26 @@ export function LoginForm() {
           </button>
         </div>
         {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p className="text-sm text-destructive flex items-center gap-1">
+            {errors.password.message}
+          </p>
         )}
       </div>
 
       <Button
         type="submit"
+        variant="gradient"
         className="w-full"
         disabled={isLoading}
       >
-        {isLoading ? 'מתחבר...' : 'התחבר'}
+        {isLoading ? (
+          <>
+            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+            מתחבר...
+          </>
+        ) : (
+          'התחבר'
+        )}
       </Button>
     </form>
   )

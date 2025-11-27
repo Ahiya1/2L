@@ -27,8 +27,10 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle>צור פרויקט חדש</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-2xl font-bold text-right">
+            צור פרויקט חדש
+          </DialogTitle>
+          <DialogDescription className="text-right text-slate-600">
             הזן את פרטי הפרויקט והעלה את קבצי ה-DOCX וה-HTML.
           </DialogDescription>
         </DialogHeader>

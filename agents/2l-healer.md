@@ -1,5 +1,6 @@
 ---
 name: 2l-healer
+model: opus
 description: Fixes specific categories of issues identified during validation
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -648,6 +649,253 @@ You'll need to update test mocks to include this field.
 3. Align data structures
 4. Fix prop passing
 5. Test integration
+
+---
+
+## Test Failures
+
+**Common causes:**
+- Broken assertions (expected vs actual mismatch)
+- Missing mocks (undefined dependencies)
+- Async test issues (missing await)
+- Snapshot mismatches
+- Test environment not setup
+- Incorrect mock data
+- Timing issues in async tests
+- Race conditions in parallel tests
+
+**Fix approach:**
+1. Read test to understand intent
+2. Run test in isolation: `npm test -- --run {testFile}`
+3. Add console.log to see actual vs expected values
+4. Determine if test or code is wrong:
+   - If code is wrong: Fix the implementation
+   - If test is wrong: Update assertions
+5. For async issues: Add proper await/async handling
+6. For mock issues: Ensure all dependencies are mocked
+7. Verify fix with full test suite
+
+**Example fix (missing await):**
+```typescript
+// Before (failing):
+it('should fetch data', () => {
+  const result = fetchData();
+  expect(result).toEqual(expected); // result is Promise, not data!
+});
+
+// After (passing):
+it('should fetch data', async () => {
+  const result = await fetchData();
+  expect(result).toEqual(expected);
+});
+```
+
+**Example fix (mock not setup):**
+```typescript
+// Before (failing - prisma is real):
+it('should get user', async () => {
+  const user = await getUser('123');
+  expect(user).toBeDefined(); // Fails: real DB not available
+});
+
+// After (passing - prisma is mocked):
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: { findUnique: vi.fn().mockResolvedValue({ id: '123', name: 'Test' }) }
+  }
+}));
+
+it('should get user', async () => {
+  const user = await getUser('123');
+  expect(user).toBeDefined();
+});
+```
+
+**Example fix (assertion mismatch):**
+```typescript
+// Before (failing - wrong expectation):
+it('should return formatted date', () => {
+  const result = formatDate(new Date('2024-01-15'));
+  expect(result).toBe('01/15/2024'); // Fails: actual is '2024-01-15'
+});
+
+// After (passing - correct expectation):
+it('should return formatted date', () => {
+  const result = formatDate(new Date('2024-01-15'));
+  expect(result).toBe('2024-01-15'); // Matches ISO format
+});
+```
+
+**Example fix (snapshot mismatch):**
+```bash
+# If code change was intentional, update snapshot:
+npm test -- --updateSnapshot
+
+# If snapshot shows unexpected change, fix the code
+# Review the diff carefully before updating
+```
+
+---
+
+## Security Concerns
+
+**Common causes:**
+- Hardcoded secrets in code
+- Missing input validation
+- Insufficient authorization checks
+- Vulnerable dependencies
+- Improper error exposure (stack traces)
+- SQL injection patterns
+- XSS vulnerabilities (unescaped output)
+- Missing rate limiting
+
+**Fix approach:**
+
+### 1. Hardcoded Secrets: Move to Environment Variables
+```typescript
+// Before (SECURITY RISK):
+const apiKey = "sk-abc123secretkey";
+const dbPassword = "myDatabasePassword123";
+
+// After (secure):
+const apiKey = process.env.API_KEY;
+const dbPassword = process.env.DB_PASSWORD;
+
+if (!apiKey) {
+  throw new Error('API_KEY environment variable is required');
+}
+```
+
+**Also add to `.env.example`:**
+```bash
+API_KEY=your-api-key-here
+DB_PASSWORD=your-db-password-here
+```
+
+### 2. Missing Input Validation: Add Zod Schemas
+```typescript
+// Before (accepts anything):
+export async function POST(req: Request) {
+  const body = await req.json();
+  const user = await createUser(body); // No validation!
+  return NextResponse.json(user);
+}
+
+// After (validates input):
+import { z } from 'zod';
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+  password: z.string().min(8),
+});
+
+export async function POST(req: Request) {
+  const body = await req.json();
+  const validated = createUserSchema.parse(body); // Throws on invalid
+  const user = await createUser(validated);
+  return NextResponse.json(user);
+}
+```
+
+### 3. Missing Auth Check: Add requireAuth
+```typescript
+// Before (anyone can access):
+export async function GET(req: Request) {
+  const data = await getPrivateData();
+  return NextResponse.json(data);
+}
+
+// After (authenticated only):
+import { requireAuth } from '@/lib/auth';
+
+export async function GET(req: Request) {
+  const user = await requireAuth(req); // Throws if not authenticated
+  const data = await getPrivateData(user.id);
+  return NextResponse.json(data);
+}
+```
+
+### 4. Vulnerable Dependencies: Update Packages
+```bash
+# Check for vulnerabilities
+npm audit
+
+# Auto-fix what can be fixed
+npm audit fix
+
+# For specific package:
+npm update {vulnerable-package}
+
+# If auto-fix doesn't work, may need manual resolution
+npm audit --json | jq '.vulnerabilities'
+```
+
+### 5. Error Exposure: Sanitize Error Messages
+```typescript
+// Before (exposes internals):
+export async function POST(req: Request) {
+  try {
+    // ...
+  } catch (error) {
+    return NextResponse.json({
+      error: error.message,
+      stack: error.stack, // NEVER expose stack traces!
+      query: sql, // NEVER expose SQL queries!
+    }, { status: 500 });
+  }
+}
+
+// After (sanitized):
+export async function POST(req: Request) {
+  try {
+    // ...
+  } catch (error) {
+    console.error('API error:', error); // Log full error server-side
+    return NextResponse.json({
+      error: 'Internal server error', // Generic message to client
+    }, { status: 500 });
+  }
+}
+```
+
+### 6. XSS Prevention: Sanitize User Content
+```typescript
+// Before (XSS vulnerability):
+<div dangerouslySetInnerHTML={{ __html: userContent }} />
+
+// After (sanitized):
+import DOMPurify from 'dompurify';
+
+const sanitizedContent = DOMPurify.sanitize(userContent, {
+  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
+  ALLOWED_ATTR: [],
+});
+
+<div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+```
+
+**Alternative: Use a markdown renderer with XSS protection:**
+```typescript
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+
+const html = DOMPurify.sanitize(marked.parse(userMarkdown));
+```
+
+### 7. SQL Injection Prevention
+```typescript
+// Before (SQL injection risk):
+const query = `SELECT * FROM users WHERE id = '${userId}'`;
+await prisma.$queryRaw(query);
+
+// After (parameterized):
+// Option 1: Use Prisma's query builder (recommended)
+await prisma.user.findUnique({ where: { id: userId } });
+
+// Option 2: If raw SQL needed, use parameterized query
+await prisma.$queryRaw`SELECT * FROM users WHERE id = ${userId}`;
+```
 
 # When You Can't Fix Something
 

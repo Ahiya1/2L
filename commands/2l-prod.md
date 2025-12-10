@@ -1,10 +1,8 @@
-# 2L MVP - Full Autonomous Development Orchestrator (Rapid Prototyping)
+# 2L Production - Full Autonomous Development with Production Quality
 
-Execute complete 2L protocol for quick prototypes and MVPs with three access levels: full autonomy, vision control, or full control.
+Execute complete 2L protocol with production-grade outputs: comprehensive tests, CI/CD pipelines, and security validation.
 
-**CRITICAL:** This command IS the orchestrator. It directly executes all orchestration logic - no agent spawning for orchestration.
-
-**Note:** For production-ready applications with comprehensive tests, CI/CD, and security validation, use `/2l-prod` instead.
+**CRITICAL:** This command produces production-ready applications, not quick prototypes. For rapid prototyping, use `/2l-mvp`.
 
 ---
 
@@ -14,12 +12,26 @@ Execute complete 2L protocol for quick prototypes and MVPs with three access lev
 
 | Command | Purpose | Identity Required |
 |---------|---------|-------------------|
+| `/2l-prod` | Doing. Production-grade execution with tests, CI/CD, security. | None |
 | `/2l-mvp` | Doing. Rapid prototyping. Tests optional. | None |
-| `/2l-prod` | Doing. Production-grade with tests, CI/CD, security. | None |
 | `/2l-observe` | Seeing. Produces reflections from memory. | Yes |
 | `/2l-embody` | Becoming. Integrates reflections into identity and protocol. | Deepest |
 
-**Key invariant:** `/2l-mvp` runs even if observe and embody never run. No coupling.
+**Key invariant:** `/2l-prod` runs even if observe and embody never run. No coupling.
+
+---
+
+## Production Mode Requirements
+
+**CRITICAL:** This command sets `mode: production` which propagates to ALL agents.
+
+Production mode enforces:
+
+1. **Tests REQUIRED** - Every feature must include unit and integration tests
+2. **CI/CD REQUIRED** - GitHub Actions workflow must exist or be created
+3. **Security REQUIRED** - Security checklist validation, no hardcoded secrets
+4. **Coverage >= 70%** - Test coverage must meet threshold
+5. **All validation gates** - No optional skips allowed
 
 ---
 
@@ -51,7 +63,7 @@ Memory is distributed (stays where produced). Reflection is centralized (`~/Ahiy
 >
 > Re-read the full 2L protocol from the meditation space:
 > ```
-> Read ~/Ahiya/2L/commands/2l-mvp.md
+> Read ~/Ahiya/2L/commands/2l-prod.md
 > ```
 >
 > This file contains the complete orchestration protocol. Do not proceed from summary alone.
@@ -64,26 +76,26 @@ This is self-referential: the protocol tells its own summary to reload the full 
 
 ### Level 1: Full Autonomy (Inline Requirements)
 ```bash
-/2l-mvp "Build a todo app with user auth and categories"
+/2l-prod "Build a todo app with user auth and categories"
 ```
 
-Auto-generates vision → auto-creates master plan → executes all iterations
+Auto-generates vision -> auto-creates master plan -> executes all iterations with PRODUCTION quality
 
 ### Level 2: Vision Control
 ```bash
 # After /2l-vision creates vision.md
-/2l-mvp
+/2l-prod
 ```
 
-Uses existing vision → auto-creates master plan → executes all iterations
+Uses existing vision -> auto-creates master plan -> executes all iterations with PRODUCTION quality
 
 ### Level 3: Full Control
 ```bash
 # After /2l-vision and /2l-plan create vision.md and master-plan.yaml
-/2l-mvp
+/2l-prod
 ```
 
-Uses existing vision and master plan → executes all iterations
+Uses existing vision and master plan -> executes all iterations with PRODUCTION quality
 
 ---
 
@@ -101,9 +113,9 @@ EVENT_LOGGING_ENABLED=false
 if [ -f "$HOME/.claude/lib/2l-event-logger.sh" ]; then
   . "$HOME/.claude/lib/2l-event-logger.sh"
   EVENT_LOGGING_ENABLED=true
-  echo "[2L] Event logging enabled"
+  echo "[2L-PROD] Event logging enabled"
 else
-  echo "[2L] Event logging not available (continuing without dashboard)"
+  echo "[2L-PROD] Event logging not available (continuing without dashboard)"
 fi
 ```
 
@@ -136,90 +148,12 @@ All events are written to `.2L/events.jsonl` in JSON Lines format with this sche
   "event_type": "phase_change",
   "phase": "building",
   "agent_id": "orchestrator",
-  "data": "Starting Building phase"
+  "data": "Starting Building phase",
+  "mode": "production"
 }
 ```
 
-### Event Emission Guidelines
-
-**When to emit events:**
-
-1. **Initialization (4 events):**
-   - `plan_start` - Level 1, 2, 3, or Resume entry points
-
-2. **Master Mode (4+ events):**
-   - `complexity_decision` - After analyzing vision complexity
-   - `phase_change` - Master exploration start
-   - `agent_spawn` - For each master explorer (2-4)
-   - `agent_complete` - For each master explorer
-   - `phase_change` - Master planning start
-
-3. **Per Iteration (12+ events):**
-   - `iteration_start` - Beginning of iteration
-   - `phase_change` - Exploration start
-   - `agent_spawn` × 2-3 - For explorers
-   - `agent_complete` × 2-3 - For explorers
-   - `phase_change` - Planning start
-   - `agent_spawn` - For planner
-   - `agent_complete` - For planner
-   - `phase_change` - Building start
-   - `agent_spawn` × N - For builders (typically 2-4)
-   - `agent_complete` × N - For builders
-   - `phase_change` - Integration start
-   - `agent_spawn` × M - For integrators (per round)
-   - `agent_complete` × M - For integrators
-   - `phase_change` - Validation start
-   - `agent_spawn` - For validator
-   - `agent_complete` - For validator
-   - `validation_result` - Validation outcome
-   - `iteration_complete` - If validation passes
-
-4. **Healing (if validation fails, 6+ events):**
-   - `phase_change` - Healing start
-   - `agent_spawn` × K - For healing explorers
-   - `agent_complete` × K - For healing explorers
-   - `agent_spawn` × L - For healers (by category)
-   - `agent_complete` × L - For healers
-   - `validation_result` - Re-validation outcome
-   - `iteration_complete` - If healing successful
-
-**Example: Simple Single-Iteration Plan**
-
-Total events: ~35-40 events
-
-- 1 `plan_start`
-- 1 `complexity_decision` (2 explorers)
-- 6 master exploration events (phase_change + 2 spawn + 2 complete)
-- 1 master planning `phase_change`
-- 1 `iteration_start`
-- 8 exploration events (phase_change + 2 spawn + 2 complete)
-- 3 planning events (phase_change + spawn + complete)
-- 7 building events (phase_change + 3 spawn + 3 complete)
-- 5 integration events (phase_change + 2 spawn + 2 complete)
-- 4 validation events (phase_change + spawn + complete + result)
-- 1 `iteration_complete`
-
-**Backward Compatibility:**
-
-All event emission is wrapped in conditional checks:
-
-```bash
-if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-  log_2l_event "event_type" "description" "phase" "agent_id"
-fi
-```
-
-This ensures:
-- Orchestrator works even if event logger library is missing
-- No crashes or failures due to event emission
-- Graceful degradation to non-observable mode
-- Dashboard features are optional, not required
-
-**Agent Event Emission:**
-
-Each agent (explorer, planner, builder, integrator, validator, healer) is responsible for emitting its own `agent_start` and `agent_complete` events. The orchestrator documentation shows the expected event pattern, but agents emit these events themselves via their markdown template instructions.
-
-See agent markdown files in `~/.claude/agents/` for agent-specific event emission code.
+**Note:** All events include `"mode": "production"` to distinguish from MVP mode events.
 
 ---
 
@@ -235,7 +169,7 @@ The command adapts based on what exists in `.2L/`:
 2. Auto-generate vision.md from inline requirements
 3. Spawn master explorers (Task tool)
 4. Auto-create master-plan.yaml
-5. Execute all iterations
+5. Execute all iterations with PRODUCTION quality
 
 **User control:** Minimal - provides high-level description only
 
@@ -246,7 +180,7 @@ The command adapts based on what exists in `.2L/`:
 1. Use existing vision.md
 2. Spawn master explorers (if not done)
 3. Auto-create master-plan.yaml based on exploration
-4. Execute all iterations
+4. Execute all iterations with PRODUCTION quality
 
 **User control:** Medium - user created vision.md via `/2l-vision`
 
@@ -256,7 +190,7 @@ The command adapts based on what exists in `.2L/`:
 **Flow:**
 1. Use existing vision.md and master-plan.yaml
 2. Execute iterations according to master plan
-3. Follow user-defined iteration breakdown
+3. Follow user-defined iteration breakdown with PRODUCTION quality
 
 **User control:** Maximum - user created vision and plan via `/2l-vision` + `/2l-plan`
 
@@ -267,6 +201,9 @@ The command adapts based on what exists in `.2L/`:
 ```python
 # Read global config
 CONFIG_FILE = ".2L/config.yaml"
+
+# SET PRODUCTION MODE
+MODE_TYPE = "production"  # CRITICAL: This distinguishes /2l-prod from /2l-mvp
 
 if arguments_provided:
     # LEVEL 1: Full Autonomy
@@ -282,29 +219,32 @@ if arguments_provided:
     MODE = 'MASTER'
     plan_id = next_plan_id
 
+    # Update config with mode
+    update_config_mode(plan_id, MODE_TYPE)  # mode: production
+
     # EVENT: plan_start (Level 1)
     # Emit plan_start event to signal beginning of autonomous orchestration
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "plan_start" "Plan $plan_id started in MASTER mode (Level 1: Full Autonomy)" "initialization" "orchestrator"
+      log_2l_event "plan_start" "Plan $plan_id started in MASTER mode (Level 1: Full Autonomy) - PRODUCTION" "initialization" "orchestrator"
     fi
 
     # Event details:
     # - event_type: "plan_start" - Marks orchestration beginning
-    # - data: Descriptive message including plan ID and level
+    # - data: Descriptive message including plan ID, level, and PRODUCTION mode
     # - phase: "initialization" - Pre-iteration orchestration setup
     # - agent_id: "orchestrator" - Always "orchestrator" for orchestrator events
 
 else:
     # Check for existing plan
     if not file_exists(CONFIG_FILE):
-        error("No active plan found. Use: /2l-mvp \"requirements\" or /2l-vision first")
+        error("No active plan found. Use: /2l-prod \"requirements\" or /2l-vision first")
         exit(1)
 
     config = read_yaml(CONFIG_FILE)
     current_plan = config['current_plan']
 
     if not current_plan:
-        error("No active plan. Use: /2l-mvp \"requirements\" or /2l-vision first")
+        error("No active plan. Use: /2l-prod \"requirements\" or /2l-vision first")
         exit(1)
 
     plan_status = get_plan_status(current_plan, config)
@@ -320,17 +260,20 @@ else:
     if plan_status == 'VISIONED' and not has_master_plan:
         # LEVEL 2: Vision Control
         LEVEL = 2
-        print(f"📋 Using existing vision from {current_plan}")
-        print("🎯 Auto-planning iteration breakdown...")
+        print(f"[PRODUCTION] Using existing vision from {current_plan}")
+        print("[PRODUCTION] Auto-planning iteration breakdown...")
 
         # Enter MASTER MODE (will auto-plan)
         MODE = 'MASTER'
         plan_id = current_plan
 
+        # Update config with mode
+        update_config_mode(plan_id, MODE_TYPE)  # mode: production
+
         # EVENT: plan_start (Level 2)
         # Emit plan_start event for vision-controlled orchestration
         if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-          log_2l_event "plan_start" "Plan $plan_id started in MASTER mode (Level 2: Vision Control)" "initialization" "orchestrator"
+          log_2l_event "plan_start" "Plan $plan_id started in MASTER mode (Level 2: Vision Control) - PRODUCTION" "initialization" "orchestrator"
         fi
 
         # Event details:
@@ -340,17 +283,20 @@ else:
     elif plan_status == 'PLANNED' and has_master_plan:
         # LEVEL 3: Full Control
         LEVEL = 3
-        print(f"📋 Using existing vision and master plan from {current_plan}")
-        print("🚀 Executing planned iterations...")
+        print(f"[PRODUCTION] Using existing vision and master plan from {current_plan}")
+        print("[PRODUCTION] Executing planned iterations...")
 
         # Enter ITERATION_EXECUTOR MODE
         MODE = 'ITERATION_EXECUTOR'
         plan_id = current_plan
 
+        # Update config with mode
+        update_config_mode(plan_id, MODE_TYPE)  # mode: production
+
         # EVENT: plan_start (Level 3)
         # Emit plan_start event for fully-controlled orchestration
         if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-          log_2l_event "plan_start" "Plan $plan_id started in ITERATION_EXECUTOR mode (Level 3: Full Control)" "initialization" "orchestrator"
+          log_2l_event "plan_start" "Plan $plan_id started in ITERATION_EXECUTOR mode (Level 3: Full Control) - PRODUCTION" "initialization" "orchestrator"
         fi
 
         # Event details:
@@ -360,15 +306,18 @@ else:
 
     elif plan_status == 'IN_PROGRESS':
         # Resume in-progress plan
-        print(f"▶️  Resuming in-progress plan: {current_plan}")
+        print(f"[PRODUCTION] Resuming in-progress plan: {current_plan}")
 
         MODE = 'ITERATION_EXECUTOR'
         plan_id = current_plan
 
+        # Verify mode is production (or set it)
+        update_config_mode(plan_id, MODE_TYPE)  # mode: production
+
         # EVENT: plan_start (Resume)
         # Emit plan_start event when resuming interrupted orchestration
         if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-          log_2l_event "plan_start" "Plan $plan_id resumed (IN_PROGRESS)" "initialization" "orchestrator"
+          log_2l_event "plan_start" "Plan $plan_id resumed (IN_PROGRESS) - PRODUCTION" "initialization" "orchestrator"
         fi
 
         # Event details:
@@ -395,7 +344,7 @@ echo ""
 echo "=== Dashboard Initialization ==="
 if [ "$EVENT_LOGGING_ENABLED" = true ]; then
   if [ ! -f ".2L/dashboard/index.html" ]; then
-    echo "[2L] Dashboard not found, creating..."
+    echo "[2L-PROD] Dashboard not found, creating..."
 
     # Create dashboard directory
     mkdir -p .2L/dashboard
@@ -407,30 +356,30 @@ if [ "$EVENT_LOGGING_ENABLED" = true ]; then
     # For now, we'll attempt spawning and handle gracefully if agent doesn't exist yet
     if [ -f "$HOME/.claude/agents/2l-dashboard-builder.md" ]; then
       # Spawn dashboard builder agent using Task tool
-      echo "[2L] Spawning dashboard builder agent..."
+      echo "[2L-PROD] Spawning dashboard builder agent..."
       # (Task tool spawning logic would go here in actual implementation)
       # For documentation: This section will spawn the dashboard builder
-      echo "[2L] Dashboard builder spawned"
+      echo "[2L-PROD] Dashboard builder spawned"
     else
-      echo "[2L] ⚠ Dashboard builder agent not available yet (will be created on next run)"
+      echo "[2L-PROD] Dashboard builder agent not available yet (will be created on next run)"
     fi
 
     if [ -f ".2L/dashboard/index.html" ]; then
       DASHBOARD_PATH="$(pwd)/.2L/dashboard/index.html"
-      echo "[2L] ✓ Dashboard created successfully"
-      echo "[2L] Open dashboard: file://$DASHBOARD_PATH"
+      echo "[2L-PROD] Dashboard created successfully"
+      echo "[2L-PROD] Open dashboard: file://$DASHBOARD_PATH"
       echo ""
     else
-      echo "[2L] ⚠ Dashboard creation pending (continuing without dashboard)"
+      echo "[2L-PROD] Dashboard creation pending (continuing without dashboard)"
     fi
   else
     DASHBOARD_PATH="$(pwd)/.2L/dashboard/index.html"
-    echo "[2L] ✓ Dashboard already exists"
-    echo "[2L] Open dashboard: file://$DASHBOARD_PATH"
+    echo "[2L-PROD] Dashboard already exists"
+    echo "[2L-PROD] Open dashboard: file://$DASHBOARD_PATH"
     echo ""
   fi
 else
-  echo "[2L] Dashboard initialization skipped (event logging disabled)"
+  echo "[2L-PROD] Dashboard initialization skipped (event logging disabled)"
 fi
 ```
 
@@ -451,7 +400,7 @@ echo "=== GitHub Integration ==="
 
 # Initialize git if not already
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
-    echo "🔧 Initializing git repository..."
+    echo "[PRODUCTION] Initializing git repository..."
     git init
     git branch -M main
 fi
@@ -464,12 +413,12 @@ VISION_FILE="${PLAN_DIR}/vision.md"
 
 # Check if vision exists
 if [ ! -f "$VISION_FILE" ]; then
-    echo "❌ ERROR: Vision file not found: $VISION_FILE"
+    echo "ERROR: Vision file not found: $VISION_FILE"
     exit 1
 fi
 
 # Analyze vision complexity to determine number of explorers
-echo "🔍 Analyzing vision complexity..."
+echo "[PRODUCTION] Analyzing vision complexity..."
 
 # Count features (## headers in vision.md)
 feature_count=$(grep -c "^## " "$VISION_FILE" || echo 0)
@@ -497,11 +446,12 @@ echo "   - Spawning $num_explorers master explorers"
 # Store decision in config.yaml for resume detection
 yq eval ".plans[] | select(.plan_id == \"${plan_id}\") | .master_exploration.num_explorers = $num_explorers" -i .2L/config.yaml
 yq eval ".plans[] | select(.plan_id == \"${plan_id}\") | .master_exploration.complexity_level = \"$complexity\"" -i .2L/config.yaml
+yq eval ".plans[] | select(.plan_id == \"${plan_id}\") | .mode = \"production\"" -i .2L/config.yaml
 
 # EVENT: complexity_decision
 # Document the adaptive spawning decision based on vision analysis
 if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-  log_2l_event "complexity_decision" "Spawning $num_explorers explorers (complexity: $complexity)" "master_exploration" "orchestrator"
+  log_2l_event "complexity_decision" "Spawning $num_explorers explorers (complexity: $complexity) - PRODUCTION" "master_exploration" "orchestrator"
 fi
 
 # Event details:
@@ -512,12 +462,12 @@ fi
 
 # Check if master exploration needs to run
 if [ ! -d "$MASTER_EXPLORATION" ] || [ $(ls ${MASTER_EXPLORATION}/master-explorer-*-report.md 2>/dev/null | wc -l) -lt $num_explorers ]; then
-    echo "🔍 Running master exploration..."
+    echo "[PRODUCTION] Running master exploration..."
 
     # EVENT: phase_change (Master Exploration Start)
     # Signal transition into master exploration phase
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Master Exploration phase" "master_exploration" "orchestrator"
+      log_2l_event "phase_change" "Starting Master Exploration phase - PRODUCTION" "master_exploration" "orchestrator"
     fi
 
     # Event details:
@@ -577,13 +527,13 @@ Focus Area: $FOCUS_AREA
 Plan: {plan_id}
 Vision: {PLAN_DIR}/vision.md
 Output: {MASTER_EXPLORATION}/master-explorer-${explorer_id}-report.md
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature completion and speed
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
-- Prioritize getting a working prototype
+PRODUCTION MODE REQUIREMENTS:
+- Consider test coverage requirements in your analysis
+- Note CI/CD pipeline needs
+- Flag security considerations early
+- Consider scalability implications
 
 Analyze the vision document and create a comprehensive exploration report focused on your assigned area.
 
@@ -611,17 +561,17 @@ Create your report at: {MASTER_EXPLORATION}/master-explorer-${explorer_id}-repor
     # - event_type: "agent_complete" - Agent completion notification
     # - Emitted once per explorer when their report is written
     # - agent_id: Matches the agent_id from agent_spawn
-    # - Purpose: Dashboard can calculate agent duration (spawn → complete)
+    # - Purpose: Dashboard can calculate agent duration (spawn -> complete)
 fi
 
 # Step 2: Auto-Create Master Plan
 if [ ! -f "$MASTER_PLAN" ]; then
-    echo "📊 Creating master plan from exploration..."
+    echo "[PRODUCTION] Creating master plan from exploration..."
 
     # EVENT: phase_change (Master Planning Start)
     # Signal transition from master exploration to master planning
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Master Planning phase" "master_planning" "orchestrator"
+      log_2l_event "phase_change" "Starting Master Planning phase - PRODUCTION" "master_planning" "orchestrator"
     fi
 
     # Event details:
@@ -672,6 +622,7 @@ $(cat "$report")
 plan_id: ${plan_id}
 created_at: $(date -Iseconds)
 status: PLANNED
+mode: production
 total_iterations: ${total_iterations}
 
 strategy: |
@@ -698,14 +649,14 @@ EOF
 EOF
     done
 
-    echo "✅ Master plan created: ${total_iterations} iterations"
+    echo "[PRODUCTION] Master plan created: ${total_iterations} iterations"
 
     # Update config
     update_config_plan_status(${plan_id}, 'PLANNED')
 fi
 
 # Step 3: Enter Iteration Execution Loop
-echo "🚀 Executing all iterations..."
+echo "[PRODUCTION] Executing all iterations..."
 MODE='ITERATION_EXECUTOR'
 ```
 
@@ -720,7 +671,7 @@ When MODE = 'ITERATION_EXECUTOR', we execute iterations from the master plan:
 master_plan = read_yaml(f"{PLAN_DIR}/master-plan.yaml")
 total_iterations = master_plan['total_iterations']
 
-print(f"📊 Master plan: {total_iterations} iterations")
+print(f"[PRODUCTION] Master plan: {total_iterations} iterations")
 
 # Execute each iteration in sequence
 for iteration_config in master_plan['iterations']:
@@ -730,21 +681,22 @@ for iteration_config in master_plan['iterations']:
     iter_vision = iteration_config['vision']
 
     if iter_status == 'COMPLETE':
-        print(f"✅ Iteration {iter_id}/{total_iterations} already complete (global #{global_iter})")
+        print(f"[PRODUCTION] Iteration {iter_id}/{total_iterations} already complete (global #{global_iter})")
         continue
 
     if iter_status == 'IN_PROGRESS':
-        print(f"▶️  Resuming iteration {iter_id}/{total_iterations} (global #{global_iter})")
+        print(f"[PRODUCTION] Resuming iteration {iter_id}/{total_iterations} (global #{global_iter})")
     else:
-        print(f"🚀 Starting iteration {iter_id}/{total_iterations} (global #{global_iter})")
+        print(f"[PRODUCTION] Starting iteration {iter_id}/{total_iterations} (global #{global_iter})")
         print(f"   Vision: {iter_vision}")
 
-    # Execute single iteration
+    # Execute single iteration with PRODUCTION mode
     execute_iteration(
         plan_id=plan_id,
         iter_id=iter_id,
         global_iter=global_iter,
-        iteration_config=iteration_config
+        iteration_config=iteration_config,
+        mode="production"  # CRITICAL: Pass production mode
     )
 
     # Check if validation passed
@@ -752,12 +704,12 @@ for iteration_config in master_plan['iterations']:
     validation_status = extract_validation_status(validation_report)
 
     if validation_status == 'PASS':
-        print(f"✅ Iteration {iter_id}/{total_iterations} complete!")
+        print(f"[PRODUCTION] Iteration {iter_id}/{total_iterations} complete!")
 
         # EVENT: iteration_complete (First-Pass Validation)
         # Mark successful iteration completion after first-pass validation
         if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-          log_2l_event "iteration_complete" "Iteration ${global_iter} completed successfully" "complete" "orchestrator"
+          log_2l_event "iteration_complete" "Iteration ${global_iter} completed successfully - PRODUCTION" "complete" "orchestrator"
         fi
 
         # Event details:
@@ -772,14 +724,14 @@ for iteration_config in master_plan['iterations']:
         # Update master plan
         update_iteration_status(master_plan, iter_id, 'COMPLETE')
     else:
-        print(f"❌ Iteration {iter_id}/{total_iterations} validation failed")
+        print(f"[PRODUCTION] Iteration {iter_id}/{total_iterations} validation failed")
         print("   Healing will be attempted...")
         # Healing is handled within execute_iteration
         break  # Stop multi-iteration execution on failure
 
 print("")
-print("✅ All planned iterations complete!")
-print(f"🎉 MVP ready! Plan: {plan_id}")
+print("[PRODUCTION] All planned iterations complete!")
+print(f"[PRODUCTION] Production-ready application! Plan: {plan_id}")
 ```
 
 ---
@@ -787,10 +739,12 @@ print(f"🎉 MVP ready! Plan: {plan_id}")
 ## Iteration Execution Logic (execute_iteration)
 
 ```python
-def execute_iteration(plan_id, iter_id, global_iter, iteration_config):
+def execute_iteration(plan_id, iter_id, global_iter, iteration_config, mode="production"):
     """
     Execute a single iteration through all phases.
     This is the core iteration loop that was in the deleted orchestrator.
+
+    PRODUCTION MODE: Enforces test generation, CI/CD, and security validation.
     """
 
     ITER_DIR = f".2L/{plan_id}/iteration-{global_iter}"
@@ -807,7 +761,7 @@ def execute_iteration(plan_id, iter_id, global_iter, iteration_config):
     # Mark the beginning of a new iteration
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
       iter_vision=$(head -n 1 ${ITER_DIR}/../vision.md 2>/dev/null || echo "Iteration ${global_iter}")
-      log_2l_event "iteration_start" "Iteration ${global_iter}: ${iter_vision}" "initialization" "orchestrator"
+      log_2l_event "iteration_start" "Iteration ${global_iter}: ${iter_vision} - PRODUCTION" "initialization" "orchestrator"
     fi
 
     # Event details:
@@ -822,7 +776,7 @@ def execute_iteration(plan_id, iter_id, global_iter, iteration_config):
     # EVENT: phase_change (Exploration Start)
     # Signal transition into exploration phase of iteration
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Exploration phase" "exploration" "orchestrator"
+      log_2l_event "phase_change" "Starting Exploration phase - PRODUCTION" "exploration" "orchestrator"
     fi
 
     # Event details:
@@ -857,12 +811,13 @@ def execute_iteration(plan_id, iter_id, global_iter, iteration_config):
 Iteration: {global_iter}
 Requirements: {ITER_DIR}/../vision.md (or iteration-specific vision)
 Output: {exploration_dir}/explorer-1-report.md
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature completion and speed
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
+PRODUCTION MODE REQUIREMENTS:
+- Consider testability in your architecture analysis
+- Note components that need integration tests
+- Flag security-sensitive areas
+- Consider CI/CD pipeline requirements
 
 Analyze:
 - Application architecture
@@ -885,12 +840,13 @@ Create report at: {exploration_dir}/explorer-1-report.md"
 Iteration: {global_iter}
 Requirements: {ITER_DIR}/../vision.md
 Output: {exploration_dir}/explorer-2-report.md
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature completion and speed
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
+PRODUCTION MODE REQUIREMENTS:
+- Include testing frameworks (Vitest recommended)
+- Note security-related dependencies
+- Consider CI/CD tooling needs
+- Flag dependencies with known vulnerabilities
 
 Analyze:
 - Frameworks and libraries to use
@@ -910,12 +866,13 @@ Create report at: {exploration_dir}/explorer-2-report.md"
 Iteration: {global_iter}
 Requirements: {ITER_DIR}/../vision.md
 Output: {exploration_dir}/explorer-3-report.md
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature completion and speed
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
+PRODUCTION MODE REQUIREMENTS:
+- Identify areas needing extensive testing
+- Note security integration points
+- Consider performance test requirements
+- Flag complex flows needing E2E tests
 
 Analyze:
 - Most complex features
@@ -948,7 +905,7 @@ Create report at: {exploration_dir}/explorer-3-report.md"
     # EVENT: phase_change (Planning Start)
     # Signal transition from exploration to planning phase
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Planning phase" "planning" "orchestrator"
+      log_2l_event "phase_change" "Starting Planning phase - PRODUCTION" "planning" "orchestrator"
     fi
 
     # Event details:
@@ -981,19 +938,25 @@ Iteration: {global_iter}
 Requirements: {ITER_DIR}/../vision.md
 Exploration: {exploration_dir}
 Output: {plan_dir}
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature completion and speed
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
-- Security patterns still followed (basic hygiene)
+PRODUCTION MODE REQUIREMENTS:
+patterns.md MUST include these additional sections:
+- Testing Patterns (unit, integration, E2E)
+- Security Patterns (input validation, auth, secrets)
+- Error Handling Patterns
+- CI/CD Patterns (GitHub Actions workflow)
+
+builder-tasks.md MUST specify:
+- Test generation is REQUIRED for each builder
+- CI/CD workflow creation if missing
+- Security pattern adherence
 
 Read all exploration reports and create 4 files:
 1. overview.md - Project vision and success criteria
 2. tech-stack.md - Technology decisions with rationale
-3. patterns.md - Code patterns and conventions
-4. builder-tasks.md - Builder task breakdown
+3. patterns.md - Code patterns and conventions (MUST include production patterns)
+4. builder-tasks.md - Builder task breakdown (MUST include test requirements)
 
 All files go in: {plan_dir}/"
         )
@@ -1015,7 +978,7 @@ All files go in: {plan_dir}/"
     # EVENT: phase_change (Building Start)
     # Signal transition from planning to building phase
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Building phase" "building" "orchestrator"
+      log_2l_event "phase_change" "Starting Building phase - PRODUCTION" "building" "orchestrator"
     fi
 
     # Event details:
@@ -1054,13 +1017,14 @@ Iteration: {global_iter}
 Your ID: Builder-{builder_id}
 Plan: {plan_dir}
 Output: {building_dir}/builder-{builder_id}-report.md
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
-- Focus on feature completion and speed
-- Security patterns still followed (basic hygiene)
+PRODUCTION MODE REQUIREMENTS:
+- You MUST generate tests for all features
+- You MUST generate CI/CD workflow if missing
+- You MUST follow security patterns from patterns.md
+- Test coverage target: 80%+
+- All tests must pass before completion
 
 Read your task from: {plan_dir}/builder-tasks.md
 Follow patterns from: {plan_dir}/patterns.md
@@ -1096,12 +1060,12 @@ Iteration: {global_iter}
 Your ID: Builder-{sub_builder_id}
 Foundation: {building_dir}/builder-{builder_id}-report.md
 Sub-task: {sub_task}
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Tests are optional (but encouraged for complex features)
-- CI/CD generation is optional
-- Focus on feature completion and speed
+PRODUCTION MODE REQUIREMENTS:
+- You MUST generate tests for your sub-feature
+- You MUST follow security patterns
+- Test coverage target: 80%+
 
 Read foundation and your sub-task.
 Complete the sub-task (no further splitting allowed).
@@ -1117,7 +1081,7 @@ Create report at: {building_dir}/builder-{sub_builder_id}-report.md"
     # EVENT: phase_change (Integration Start)
     # Signal transition from building to integration phase
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Integration phase" "integration" "orchestrator"
+      log_2l_event "phase_change" "Starting Integration phase - PRODUCTION" "integration" "orchestrator"
     fi
 
     # Event details:
@@ -1151,12 +1115,12 @@ Round: {integration_round}
 Builders: {building_dir}
 Plan: {plan_dir}
 Output: {round_dir}/integration-plan.md
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature integration
-- Test file integration optional
-- CI/CD workflow integration optional
+PRODUCTION MODE:
+- Ensure all test files are included in integration
+- Verify CI/CD workflow is present
+- Check security patterns are maintained
 
 Read all builder reports and create integration zones.
 Assign zones to integrators for parallel work.
@@ -1183,12 +1147,12 @@ Round: {integration_round}
 Your ID: Integrator-{integrator_id}
 Integration Plan: {integration_plan}
 Assigned Zones: {zones}
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on feature integration
-- Test file integration optional
-- CI/CD workflow integration optional
+PRODUCTION MODE:
+- Integrate test files alongside implementation
+- Ensure CI/CD workflow is properly integrated
+- Maintain security patterns during merge
 
 Read the integration plan and execute your assigned zones.
 Resolve conflicts according to plan strategies.
@@ -1212,12 +1176,12 @@ Iteration: {global_iter}
 Round: {integration_round}
 Integration: {round_dir}
 Plan: {plan_dir}
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE:
-- Focus on code cohesion
-- Test file validation optional
-- CI/CD workflow validation optional
+PRODUCTION MODE:
+- Verify all test files are present
+- Check CI/CD workflow exists and is valid
+- Validate security patterns maintained
 
 Check all cohesion dimensions:
 - No duplicate implementations
@@ -1236,19 +1200,19 @@ Create report at: {round_dir}/ivalidation-report.md"
         ivalidation_status = extract_ivalidation_status(ivalidation_report)
 
         if ivalidation_status == 'PASS':
-            print(f"      ✅ Integration Round {integration_round} passed")
+            print(f"      [PRODUCTION] Integration Round {integration_round} passed")
 
             # Create final integration report
             create_final_integration_report(integration_dir, integration_round)
             break
 
         elif ivalidation_status == 'FAIL' and integration_round < max_integration_rounds:
-            print(f"      ⚠️  Integration Round {integration_round} failed, starting round {integration_round + 1}")
+            print(f"      [PRODUCTION] Integration Round {integration_round} failed, starting round {integration_round + 1}")
             integration_round += 1
             continue
 
         else:  # FAIL and round == 3
-            print(f"      ⚠️  Integration Round {integration_round} failed (final round)")
+            print(f"      [PRODUCTION] Integration Round {integration_round} failed (final round)")
             print(f"         Proceeding with partial integration...")
             create_final_integration_report(integration_dir, integration_round, status='PARTIAL')
             break
@@ -1259,7 +1223,7 @@ Create report at: {round_dir}/ivalidation-report.md"
     # EVENT: phase_change (Validation Start)
     # Signal transition from integration to validation phase
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Validation phase" "validation" "orchestrator"
+      log_2l_event "phase_change" "Starting Validation phase - PRODUCTION" "validation" "orchestrator"
     fi
 
     # Event details:
@@ -1274,30 +1238,31 @@ Create report at: {round_dir}/ivalidation-report.md"
     if not file_exists(validation_report):
         spawn_task(
             type="2l-validator",
-            prompt=f"Validate MVP for readiness.
+            prompt=f"Validate MVP for production readiness.
 
 Iteration: {global_iter}
 Integration: {integration_dir}
 Plan: {plan_dir}
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE - Standard checks:
+PRODUCTION MODE - ALL CHECKS ARE MANDATORY:
 1. TypeScript compilation
 2. Linting
 3. Code formatting
-4. Unit tests (if present)
-5. Integration tests (if present)
+4. Unit tests (REQUIRED)
+5. Integration tests (REQUIRED)
 6. Build process
 7. Development server
 8. Success criteria verification
 9. MCP-based validation (performance, E2E, database)
 
-MVP MODE - SKIPPED (production only):
-- Test coverage analysis (skipped)
-- Security validation (basic only - hardcoded secrets check)
-- CI/CD verification (skipped)
+PRODUCTION MODE - ADDITIONAL GATES:
+10. Test Coverage Analysis (>= 70% REQUIRED)
+11. Security Validation (REQUIRED)
+12. CI/CD Verification (REQUIRED)
 
 Determine PASS or FAIL.
+PRODUCTION MODE: All gates must pass for PASS status.
 
 Create report at: {validation_dir}/validation-report.md"
         )
@@ -1308,7 +1273,7 @@ Create report at: {validation_dir}/validation-report.md"
     # EVENT: validation_result
     # Document the outcome of validation phase
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "validation_result" "Validation: ${validation_status}" "validation" "validator-1"
+      log_2l_event "validation_result" "Validation: ${validation_status} - PRODUCTION" "validation" "validator-1"
     fi
 
     # Event details:
@@ -1318,7 +1283,7 @@ Create report at: {validation_dir}/validation-report.md"
     # - Purpose: Dashboard highlights validation success/failure prominently
 
     if validation_status == 'PASS':
-        print(f"   ✅ Validation PASSED")
+        print(f"   [PRODUCTION] Validation PASSED")
 
         # Memory is left in place (events.jsonl, validation reports, code changes)
         # Reflections are NOT produced here - they are created by /2l-observe
@@ -1326,13 +1291,13 @@ Create report at: {validation_dir}/validation-report.md"
         return  # Iteration complete!
 
     # Phase 6: HEALING (if validation failed)
-    print(f"   ⚠️  Validation FAILED")
+    print(f"   [PRODUCTION] Validation FAILED")
     print(f"   Phase 6: Healing")
 
     # EVENT: phase_change (Healing Start)
     # Signal transition to healing phase after validation failure
     if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-      log_2l_event "phase_change" "Starting Healing phase" "healing" "orchestrator"
+      log_2l_event "phase_change" "Starting Healing phase - PRODUCTION" "healing" "orchestrator"
     fi
 
     # Event details:
@@ -1368,19 +1333,25 @@ Create report at: {validation_dir}/validation-report.md"
 Iteration: {global_iter}
 Healing Attempt: {healing_attempt}
 Focus: Root Cause Analysis
+Mode: PRODUCTION
 
 Validation Report: {validation_report}
 Codebase: Current state with failures
 
 Your mission:
 1. Read the validation report carefully
-2. Categorize failures (TypeScript, tests, lint, build, logic bugs, etc.)
+2. Categorize failures (TypeScript, tests, lint, build, logic bugs, coverage, security, CI/CD)
 3. For each failure category, identify:
    - Root causes (not just symptoms)
    - Affected files and components
    - Dependencies between failures
    - Recommended fix strategies
 4. Create a failure analysis that will guide healers
+
+PRODUCTION MODE - Include analysis of:
+- Test coverage gaps
+- Security issues found
+- CI/CD workflow problems
 
 Create report at: {healing_exploration_dir}/healing-explorer-1-report.md
 
@@ -1417,6 +1388,7 @@ Report structure:
 Iteration: {global_iter}
 Healing Attempt: {healing_attempt}
 Focus: Integration & Dependency Analysis
+Mode: PRODUCTION
 
 Validation Report: {validation_report}
 Primary Analysis: {healing_exploration_dir}/healing-explorer-1-report.md
@@ -1426,6 +1398,11 @@ Your mission:
 2. Map out which fixes might conflict with each other
 3. Analyze integration points that need healing
 4. Recommend healing order to minimize conflicts
+
+PRODUCTION MODE:
+- Consider test-implementation dependencies
+- Note security fix priorities
+- CI/CD workflow repair sequence
 
 Create report at: {healing_exploration_dir}/healing-explorer-2-report.md
 
@@ -1471,22 +1448,21 @@ Report structure:
 Iteration: {global_iter}
 Healing Attempt: {healing_attempt}
 Category: {category}
-Mode: MVP
+Mode: PRODUCTION
 
 Validation Report: {validation_report}
 Healing Exploration: {healing_exploration_dir}/healing-explorer-1-report.md
-
-MVP MODE:
-- Focus on fixing blocking issues
-- Test/coverage issues are lower priority
-- CI/CD issues can be skipped
-- Security basics still required
 
 Read the validation report AND the healing exploration report.
 The exploration report provides root cause analysis and fix strategies.
 
 Fix all issues in category: {category}
 Issues: {issue_list}
+
+PRODUCTION MODE REQUIREMENTS:
+- If category is 'test_failures': Fix tests AND ensure coverage
+- If category is 'security_concerns': Fix ALL security issues
+- If category is 'ci_cd': Ensure workflow is complete and valid
 
 Follow the recommended fix strategy from the exploration report.
 Consider dependencies and risks identified by explorers.
@@ -1505,7 +1481,7 @@ Create report at: {healing_dir}/healer-{healer_id}-report.md"
         # Check if healing made any changes (before wasting 2nd attempt)
         git_diff_check = run_command("git diff --stat", capture_output=True)
         if healing_attempt == 1 and not git_diff_check.stdout.strip():
-            print(f"      ⚠️  ERROR: Healing made no changes. Escalating to manual intervention.")
+            print(f"      [PRODUCTION] ERROR: Healing made no changes. Escalating to manual intervention.")
             print("")
             print("=" * 60)
             print("MANUAL INTERVENTION REQUIRED")
@@ -1521,7 +1497,7 @@ Create report at: {healing_dir}/healer-{healer_id}-report.md"
         # EVENT: phase_change (Re-validation Start)
         # Signal that re-validation is starting after healing attempt
         if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-          log_2l_event "phase_change" "Starting re-validation after healing attempt ${healing_attempt}" "validation" "orchestrator"
+          log_2l_event "phase_change" "Starting re-validation after healing attempt ${healing_attempt} - PRODUCTION" "validation" "orchestrator"
         fi
 
         # Event details:
@@ -1540,14 +1516,13 @@ Iteration: {global_iter}
 Healing Attempt: {healing_attempt}
 Integration: {integration_dir}
 Healing: {healing_dir}
-Mode: MVP
+Mode: PRODUCTION
 
-MVP MODE - Standard checks:
-- TypeScript, lint, build (REQUIRED)
-- Tests if present
-- Coverage check (SKIPPED)
-- Security (basic only)
-- CI/CD verification (SKIPPED)
+PRODUCTION MODE - ALL GATES MUST PASS:
+- Standard checks (TypeScript, lint, build)
+- Test coverage >= 70%
+- Security checklist clear
+- CI/CD workflow exists and valid
 
 Run full validation again.
 
@@ -1560,7 +1535,7 @@ Create report at: {healing_dir}/validation-report.md"
         # EVENT: validation_result (Re-validation Outcome)
         # Document the re-validation outcome
         if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-          log_2l_event "validation_result" "Re-validation attempt ${healing_attempt}: ${validation_status}" "validation" "validator-revalidation"
+          log_2l_event "validation_result" "Re-validation attempt ${healing_attempt}: ${validation_status} - PRODUCTION" "validation" "validator-revalidation"
         fi
 
         # Event details:
@@ -1569,7 +1544,7 @@ Create report at: {healing_dir}/validation-report.md"
         # - agent_id: "validator-revalidation" - Distinguishes from first-pass validator
 
         if validation_status == 'PASS':
-            print(f"      ✅ Healing successful!")
+            print(f"      [PRODUCTION] Healing successful!")
 
             # Memory is left in place (events.jsonl, validation reports, healing logs, code changes)
             # Reflections are NOT produced here - they are created by /2l-observe
@@ -1577,7 +1552,7 @@ Create report at: {healing_dir}/validation-report.md"
             # EVENT: iteration_complete (After Healing)
             # Mark successful iteration completion after healing
             if [ "$EVENT_LOGGING_ENABLED" = true ]; then
-              log_2l_event "iteration_complete" "Iteration ${global_iter} completed after ${healing_attempt} healing round(s)" "complete" "orchestrator"
+              log_2l_event "iteration_complete" "Iteration ${global_iter} completed after ${healing_attempt} healing round(s) - PRODUCTION" "complete" "orchestrator"
             fi
 
             # Event details:
@@ -1589,13 +1564,13 @@ Create report at: {healing_dir}/validation-report.md"
             return  # Iteration complete!
 
         elif healing_attempt < max_healing_attempts:
-            print(f"      ⚠️  Healing attempt {healing_attempt} failed, trying again...")
+            print(f"      [PRODUCTION] Healing attempt {healing_attempt} failed, trying again...")
             healing_attempt += 1
             validation_report = validation_report_heal  # Use new report for next round
             continue
 
         else:
-            print(f"      ❌ Healing failed after {max_healing_attempts} attempts")
+            print(f"      [PRODUCTION] Healing failed after {max_healing_attempts} attempts")
             print(f"         Manual intervention required")
 
             # Escalate to user
@@ -1624,20 +1599,26 @@ def auto_commit_iteration(plan_id, iter_id, global_iter, iter_vision):
     run_command("git add .")
 
     # Create commit message
-    commit_msg = f"""2L Iteration {global_iter} (Plan {plan_id})
+    commit_msg = f"""2L Iteration {global_iter} (Plan {plan_id}) - PRODUCTION
 
 Vision: {iter_vision}
 Status: PASS
+Mode: PRODUCTION
 Plan: {plan_id} (iteration {iter_id})
 
-🤖 Generated with 2L
+Quality gates passed:
+- Test coverage >= 70%
+- Security validation clear
+- CI/CD workflow verified
+
+Generated with 2L (Production Mode)
 Co-Authored-By: Claude <noreply@anthropic.com>"""
 
     # Commit
     run_command(f'git commit -m "{commit_msg}"')
 
     # Create tag
-    tag = f"2l-{plan_id}-iter-{global_iter}"
+    tag = f"2l-{plan_id}-iter-{global_iter}-prod"
     run_command(f"git tag {tag}")
 
     commit_hash = run_command("git rev-parse HEAD").strip()
@@ -1645,10 +1626,26 @@ Co-Authored-By: Claude <noreply@anthropic.com>"""
     # Update config
     update_config_iteration_commit(global_iter, commit_hash, tag)
 
-    print(f"   ✅ Auto-committed: {tag}")
+    print(f"   [PRODUCTION] Auto-committed: {tag}")
 
     # Push to GitHub if remote exists
     push_to_github(plan_id, tag)
+
+
+def update_config_mode(plan_id, mode):
+    """
+    Update config with execution mode (production or mvp).
+    """
+
+    config_file = ".2L/config.yaml"
+    config = read_yaml(config_file)
+
+    for plan in config.get('plans', []):
+        if plan.get('plan_id') == plan_id:
+            plan['mode'] = mode
+            break
+
+    write_yaml(config_file, config)
 
 
 def create_final_integration_report(integration_dir, final_round, status='SUCCESS'):
@@ -1663,6 +1660,9 @@ def create_final_integration_report(integration_dir, final_round, status='SUCCES
 ## Status
 {status}
 
+## Mode
+PRODUCTION
+
 ## Integration Rounds Completed
 {final_round}
 
@@ -1670,6 +1670,11 @@ def create_final_integration_report(integration_dir, final_round, status='SUCCES
 Integration completed after {final_round} round(s).
 
 [Include summary from ivalidation of final round]
+
+## Production Verification
+- Test files integrated: YES
+- CI/CD workflow integrated: YES
+- Security patterns maintained: YES
 
 ## Next Phase
 Ready for validation.
@@ -1706,14 +1711,14 @@ def setup_github_repo(plan_id, plan_dir, project_name=None):
     # Check if gh CLI is available
     gh_check = run_command("gh --version", capture_output=True, check=False)
     if gh_check.returncode != 0:
-        print("   ⚠️  GitHub CLI (gh) not installed - skipping GitHub integration")
+        print("   GitHub CLI (gh) not installed - skipping GitHub integration")
         print("      Install: https://cli.github.com/")
         return None
 
     # Check if already authenticated
     auth_check = run_command("gh auth status", capture_output=True, check=False)
     if auth_check.returncode != 0:
-        print("   ⚠️  GitHub CLI not authenticated - skipping GitHub integration")
+        print("   GitHub CLI not authenticated - skipping GitHub integration")
         print("      Run: gh auth login")
         return None
 
@@ -1721,7 +1726,7 @@ def setup_github_repo(plan_id, plan_dir, project_name=None):
     remote_check = run_command("git remote get-url origin", capture_output=True, check=False)
     if remote_check.returncode == 0:
         repo_url = remote_check.stdout.strip()
-        print(f"   ✓ GitHub repo already exists: {repo_url}")
+        print(f"   GitHub repo already exists: {repo_url}")
         # Store repo URL for this plan too
         update_config_github_repo(plan_id, repo_url)
         return repo_url
@@ -1733,11 +1738,11 @@ def setup_github_repo(plan_id, plan_dir, project_name=None):
     # Use project name directly, without plan suffix
     repo_name = project_name
 
-    print(f"   🔧 Creating GitHub repository: {repo_name}")
+    print(f"   [PRODUCTION] Creating GitHub repository: {repo_name}")
 
     # Read vision for repo description
     vision_file = f"{plan_dir}/vision.md"
-    description = "2L Generated Project"
+    description = "2L Generated Project (Production Mode)"
     if file_exists(vision_file):
         vision_content = read_file(vision_file)
         first_line = vision_content.split('\n')[0].strip('# ')
@@ -1751,13 +1756,13 @@ def setup_github_repo(plan_id, plan_dir, project_name=None):
     )
 
     if create_result.returncode != 0:
-        print(f"   ⚠️  Failed to create GitHub repo: {create_result.stderr}")
+        print(f"   Failed to create GitHub repo: {create_result.stderr}")
         return None
 
     # Get repo URL
     repo_url = run_command("gh repo view --json url -q .url").strip()
 
-    print(f"   ✅ GitHub repo created: {repo_url}")
+    print(f"   [PRODUCTION] GitHub repo created: {repo_url}")
 
     # Store repo URL in config (for this plan and future reference)
     update_config_github_repo(plan_id, repo_url)
@@ -1778,7 +1783,7 @@ def push_to_github(plan_id, tag=None):
 
     repo_url = remote_check.stdout.strip()
 
-    print(f"   📤 Pushing to GitHub: {repo_url}")
+    print(f"   [PRODUCTION] Pushing to GitHub: {repo_url}")
 
     # Get current branch
     branch = run_command("git branch --show-current").strip()
@@ -1787,18 +1792,18 @@ def push_to_github(plan_id, tag=None):
     push_result = run_command(f"git push origin {branch}", capture_output=True, check=False)
 
     if push_result.returncode != 0:
-        print(f"   ⚠️  Push failed: {push_result.stderr}")
+        print(f"   Push failed: {push_result.stderr}")
         return
 
-    print(f"   ✅ Pushed to {branch}")
+    print(f"   [PRODUCTION] Pushed to {branch}")
 
     # Push tags if specified
     if tag:
         tag_push_result = run_command(f"git push origin {tag}", capture_output=True, check=False)
         if tag_push_result.returncode == 0:
-            print(f"   ✅ Pushed tag: {tag}")
+            print(f"   [PRODUCTION] Pushed tag: {tag}")
         else:
-            print(f"   ⚠️  Tag push failed: {tag_push_result.stderr}")
+            print(f"   Tag push failed: {tag_push_result.stderr}")
 
 
 def update_config_github_repo(plan_id, repo_url):
@@ -1815,7 +1820,7 @@ def update_config_github_repo(plan_id, repo_url):
             break
 
     write_yaml(config_file, config)
-
+```
 
 ---
 
@@ -1832,7 +1837,7 @@ PLAN_DIR=".2L/${PLAN_ID}"
 mkdir -p ${PLAN_DIR}
 
 # Auto-generate vision.md
-echo "📝 Generating vision from inline requirements..."
+echo "[PRODUCTION] Generating vision from inline requirements..."
 
 # Create simple vision document
 cat > ${PLAN_DIR}/vision.md <<EOF
@@ -1841,6 +1846,14 @@ cat > ${PLAN_DIR}/vision.md <<EOF
 ## Overview
 
 ${INLINE_REQUIREMENTS}
+
+## Mode
+
+PRODUCTION - This project will include:
+- Comprehensive test coverage (>= 70%)
+- CI/CD pipeline (GitHub Actions)
+- Security validation
+- All quality gates enforced
 
 ## Approach
 
@@ -1855,6 +1868,7 @@ ${INLINE_REQUIREMENTS}
 
 *Auto-generated: $(date -I)*
 *Plan ID: ${PLAN_ID}*
+*Mode: PRODUCTION*
 EOF
 
 # Initialize/update config
@@ -1867,6 +1881,7 @@ plans:
   - plan_id: ${PLAN_ID}
     name: "Auto-generated from inline requirements"
     status: VISIONED
+    mode: production
     created_at: "$(date -Iseconds)"
     vision_file: .2L/${PLAN_ID}/vision.md
 EOF
@@ -1876,8 +1891,8 @@ else
     echo "Updating config with new plan..."
 fi
 
-echo "✅ Vision created: ${PLAN_DIR}/vision.md"
-echo "🚀 Starting master orchestration..."
+echo "[PRODUCTION] Vision created: ${PLAN_DIR}/vision.md"
+echo "[PRODUCTION] Starting master orchestration..."
 ```
 
 ---
@@ -1896,7 +1911,7 @@ Before compacting, I will:
 2. **Create continuation instruction:**
    - The next session will automatically receive:
 
-> /2l-continue is running…
+> /2l-continue is running...
 
 3. **State preservation:**
    - All progress saved in `.2L/` directory structure
@@ -1904,7 +1919,7 @@ Before compacting, I will:
    - Workflow continues seamlessly
 
 **This enables infinite orchestration:**
-- MVP can span any number of sessions
+- Production app can span any number of sessions
 - Each session auto-triggers `/2l-continue`
 - No manual intervention needed
 - Complete context resilience
@@ -1916,29 +1931,29 @@ Before compacting, I will:
 Throughout execution, provide clear status updates:
 
 **Level 1:**
-- "📝 Generating vision from inline requirements..."
-- "✅ Vision created"
-- "🔍 Running master exploration..."
-- "📊 Creating master plan..."
-- "🚀 Executing iteration 1/3..."
+- "[PRODUCTION] Generating vision from inline requirements..."
+- "[PRODUCTION] Vision created"
+- "[PRODUCTION] Running master exploration..."
+- "[PRODUCTION] Creating master plan..."
+- "[PRODUCTION] Executing iteration 1/3..."
 
 **Level 2:**
-- "📋 Using existing vision"
-- "🔍 Running master exploration..."
-- "📊 Auto-planning iteration breakdown..."
-- "🚀 Executing iteration 1/2..."
+- "[PRODUCTION] Using existing vision"
+- "[PRODUCTION] Running master exploration..."
+- "[PRODUCTION] Auto-planning iteration breakdown..."
+- "[PRODUCTION] Executing iteration 1/2..."
 
 **Level 3:**
-- "📋 Using existing vision and master plan"
-- "📊 3 iterations planned"
-- "🚀 Executing iteration 1/3..."
-- "✅ Iteration 1 complete. Auto-committed: 2l-plan-1-iter-1"
+- "[PRODUCTION] Using existing vision and master plan"
+- "[PRODUCTION] 3 iterations planned"
+- "[PRODUCTION] Executing iteration 1/3..."
+- "[PRODUCTION] Iteration 1 complete. Auto-committed: 2l-plan-1-iter-1-prod"
 
 ---
 
 ## Output Structure
 
-After `/2l-mvp` completes (any level):
+After `/2l-prod` completes (any level):
 
 ```
 .2L/
@@ -1948,17 +1963,17 @@ After `/2l-mvp` completes (any level):
     ├── master-exploration/             # Auto-generated
     │   ├── master-explorer-1-report.md
     │   └── master-explorer-2-report.md
-    ├── master-plan.yaml                # Auto OR from /2l-plan
+    ├── master-plan.yaml                # Auto OR from /2l-plan (mode: production)
     ├── iteration-{M}/                  # Global iteration number
     │   ├── exploration/
-    │   ├── plan/
-    │   ├── building/
+    │   ├── plan/                       # Includes testing/security patterns
+    │   ├── building/                   # Includes test files
     │   ├── integration/
     │   │   ├── round-1/
     │   │   ├── round-2/ (if needed)
     │   │   ├── round-3/ (if needed)
     │   │   └── final-integration-report.md
-    │   ├── validation/
+    │   ├── validation/                 # Includes coverage/security/CI checks
     │   └── healing-{1,2}/ (if needed)
     └── iteration-{M+1}/
 ```
@@ -1994,20 +2009,20 @@ These are available to all agents throughout the 2L workflow.
 
 **If no arguments and no active plan:**
 ```
-❌ No active plan found.
+[PRODUCTION] ERROR: No active plan found.
 
 Options:
   1. Provide inline requirements:
-     /2l-mvp "Build a todo app with auth"
+     /2l-prod "Build a todo app with auth"
 
   2. Create vision first:
      /2l-vision
-     /2l-mvp
+     /2l-prod
 ```
 
 **If plan is COMPLETE:**
 ```
-✅ Plan ${PLAN_ID} is already complete!
+[PRODUCTION] Plan ${PLAN_ID} is already complete!
 
 To start new work:
   /2l-vision    # Create new plan
@@ -2015,7 +2030,7 @@ To start new work:
 
 **If plan is ABANDONED:**
 ```
-⚠️  Plan ${PLAN_ID} was abandoned.
+[PRODUCTION] Plan ${PLAN_ID} was abandoned.
 
 Options:
   1. Resume it (if appropriate)
@@ -2024,6 +2039,6 @@ Options:
 
 ---
 
-Now let's build this MVP! 🚀
+Now let's build this production-ready application!
 
 **Note:** This command IS the orchestrator. All orchestration logic executes directly within this command session. If context limits are reached, the workflow will checkpoint and `/2l-continue` will resume from the exact state.

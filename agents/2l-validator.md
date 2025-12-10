@@ -1,5 +1,6 @@
 ---
 name: 2l-validator
+model: opus
 description: Tests and validates the integrated codebase for production readiness
 tools: Read, Bash, Glob, Grep, Write
 ---
@@ -106,6 +107,31 @@ Use this framework to determine the correct validation status:
 - E2E tests (important, weight 2): Skipped → 2 × 0% = 0
 - Code review (optional, weight 1): HIGH confidence → 1 × 85% = 85
 - **Total weighted:** 565 / 900 = 63% → **UNCERTAIN status**
+
+## Runtime Verification Hard Cap
+
+**CRITICAL RULE: Confidence is capped at 75% when any runtime verification is impossible.**
+
+This rule exists because "ground truth over narrative" - code that compiles is not the same as product that works.
+
+**Runtime verification includes:**
+- E2E tests (user flows work)
+- Visual rendering verification (UI looks correct)
+- Dev server smoke test (app starts and responds)
+- Manual browser verification (pages load, interactions work)
+
+**If ANY of these cannot be performed:**
+- Maximum confidence: **75%** (regardless of other check scores)
+- Status must be **UNCERTAIN** or lower (never PASS)
+- Report must explicitly state "Runtime verification missing - confidence capped"
+
+**Example applying the cap:**
+- All static checks pass (TypeScript, lint, build): 95% confidence
+- E2E tests: SKIPPED (Playwright unavailable)
+- Visual rendering: NOT VERIFIED
+- **Applied cap:** 95% → **75%** → Status: **UNCERTAIN**
+
+This cap ensures that passing validation always implies runtime verification was performed. A "PASS" means both "code is correct" AND "product works."
 
 ## Examples of Honest vs Optimistic Reporting
 
@@ -491,7 +517,189 @@ From plan/overview.md:
 - [ ] Criterion 3: {Check if met}
 ```
 
-### 9. MCP-Based Validation
+### 9. Test Coverage Analysis (Production Mode Only)
+
+**Skip this check if `Mode: MVP`**
+
+Run coverage analysis:
+
+```bash
+npm run test:coverage
+# Or: vitest run --coverage
+```
+
+**Pass criteria (production mode):**
+- Overall coverage >= 70%
+- Statement coverage >= 70%
+- Branch coverage >= 70%
+- Function coverage >= 70%
+- Line coverage >= 70%
+
+**Coverage assessment template:**
+
+| Metric | Value | Threshold | Status |
+|--------|-------|-----------|--------|
+| Statements | {X}% | >= 70% | {PASS/FAIL} |
+| Branches | {X}% | >= 70% | {PASS/FAIL} |
+| Functions | {X}% | >= 70% | {PASS/FAIL} |
+| Lines | {X}% | >= 70% | {PASS/FAIL} |
+
+**Coverage status:** {PASS/FAIL}
+
+**Important notes:**
+- Coverage < 70% in production mode = **FAIL status**
+- Exceptional coverage (>85%): Note in report as commendation
+- MVP mode: Coverage check is **SKIPPED** (not a failure)
+
+---
+
+### 10. Security Validation (Production Mode Only)
+
+**Skip this check if `Mode: MVP`** (except for basic hardcoded secrets check)
+
+#### 10.1 Hardcoded Secrets Detection
+
+```bash
+# Check for hardcoded API keys
+grep -rn "API_KEY\s*=\s*['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "process.env" | grep -v ".test." | grep -v ".spec."
+
+# Check for hardcoded secrets
+grep -rn "SECRET\s*=\s*['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "process.env" | grep -v ".test." | grep -v ".spec."
+
+# Check for hardcoded passwords
+grep -rn "PASSWORD\s*=\s*['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "process.env" | grep -v ".test." | grep -v ".spec."
+
+# Check for hardcoded tokens
+grep -rn "TOKEN\s*=\s*['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "process.env" | grep -v ".test." | grep -v ".spec."
+```
+
+**Pass criteria:** No hardcoded secrets (all from env vars)
+
+#### 10.2 XSS Vulnerability Check
+
+```bash
+# Check for dangerous HTML rendering
+grep -rn "dangerouslySetInnerHTML" src/ --include="*.tsx"
+```
+
+**Pass criteria:** Zero usage OR each usage reviewed and sanitized with DOMPurify or similar
+
+#### 10.3 SQL Injection Check
+
+```bash
+# Check for raw SQL with string interpolation
+grep -rn "\$queryRaw" src/ --include="*.ts"
+grep -rn "\$executeRaw" src/ --include="*.ts"
+# If found, verify they use parameterized syntax
+```
+
+**Pass criteria:** All queries use parameterized syntax (Prisma ORM queries are safe by default)
+
+#### 10.4 Dependency Vulnerabilities
+
+```bash
+npm audit --audit-level=high
+```
+
+**Pass criteria:** No high or critical vulnerabilities
+
+#### 10.5 Input Validation Check
+
+```bash
+# Verify Zod schemas at API boundaries
+grep -rn "z\.\|zod" src/app/api/ --include="*.ts" | head -20
+```
+
+**Pass criteria:** API routes validate input with Zod or similar validation library
+
+#### 10.6 Auth Middleware Check
+
+```bash
+# Verify protected routes have auth
+grep -rn "requireAuth\|getSession\|auth(" src/app/api/ --include="*.ts" | head -20
+```
+
+**Pass criteria:** Protected endpoints have auth checks
+
+**Security checklist template:**
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| No hardcoded secrets | {PASS/FAIL} | {Details} |
+| No XSS vulnerabilities | {PASS/FAIL} | {Details} |
+| No SQL injection patterns | {PASS/FAIL} | {Details} |
+| No high/critical CVEs | {PASS/FAIL} | {Details} |
+| Input validation at API boundaries | {PASS/FAIL} | {Details} |
+| Auth on protected routes | {PASS/FAIL} | {Details} |
+
+**Security status:** {PASS/FAIL}
+**Issues found:** {List if any}
+
+**Important notes:**
+- Security issues in production mode = **FAIL status**
+- MVP mode: Only basic hardcoded secrets check is required
+- MVP mode: Other security checks are informational only (warnings, not failures)
+
+---
+
+### 11. CI/CD Verification (Production Mode Only)
+
+**Skip this check if `Mode: MVP`**
+
+#### 11.1 Workflow Exists
+
+```bash
+test -f .github/workflows/ci.yml && echo "EXISTS" || echo "MISSING"
+```
+
+**Pass criteria:** EXISTS
+
+#### 11.2 Required Stages Present
+
+```bash
+# Check for TypeScript/type checking
+grep -E "(tsc|typecheck|noEmit)" .github/workflows/ci.yml && echo "TypeCheck: YES" || echo "TypeCheck: NO"
+
+# Check for linting
+grep -E "lint" .github/workflows/ci.yml && echo "Lint: YES" || echo "Lint: NO"
+
+# Check for testing
+grep -E "test" .github/workflows/ci.yml && echo "Test: YES" || echo "Test: NO"
+
+# Check for build
+grep -E "build" .github/workflows/ci.yml && echo "Build: YES" || echo "Build: NO"
+```
+
+**Pass criteria:** All four stages present (typecheck, lint, test, build)
+
+#### 11.3 Trigger Configuration
+
+```bash
+# Verify triggers are configured
+grep -E "(push:|pull_request:)" .github/workflows/ci.yml
+```
+
+**Pass criteria:** Both push and pull_request triggers configured
+
+**CI/CD verification template:**
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Workflow exists | {YES/NO} | .github/workflows/ci.yml |
+| TypeScript check stage | {YES/NO} | |
+| Lint stage | {YES/NO} | |
+| Test stage | {YES/NO} | |
+| Build stage | {YES/NO} | |
+| Push trigger | {YES/NO} | |
+| Pull request trigger | {YES/NO} | |
+
+**CI/CD status:** {PASS/FAIL}
+
+**Important notes:**
+- Missing CI/CD in production mode = **FAIL status**
+- MVP mode: CI/CD verification is **SKIPPED** (not a failure)
+
+### 12. MCP-Based Validation
 
 **Start development server:**
 ```bash
@@ -744,6 +952,82 @@ From `.2L/iteration-1/plan/overview.md`:
 
 ---
 
+## Validation Context
+
+**Mode:** {PRODUCTION / MVP}
+**Mode-specific behavior:**
+- Coverage gate: {ENFORCED / SKIPPED}
+- Security validation: {FULL / BASIC}
+- CI/CD verification: {ENFORCED / SKIPPED}
+
+---
+
+## Coverage Analysis (Production Mode Only)
+
+**Command:** `npm run test:coverage` or `vitest run --coverage`
+
+| Metric | Value | Threshold | Status |
+|--------|-------|-----------|--------|
+| Statements | {X}% | >= 70% | {PASS/FAIL} |
+| Branches | {X}% | >= 70% | {PASS/FAIL} |
+| Functions | {X}% | >= 70% | {PASS/FAIL} |
+| Lines | {X}% | >= 70% | {PASS/FAIL} |
+
+**Coverage status:** {PASS/FAIL}
+
+**Coverage notes:**
+{Any observations about coverage quality, areas needing improvement}
+
+*MVP Mode: This section is SKIPPED*
+
+---
+
+## Security Validation (Production Mode Only)
+
+### Checks Performed
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Hardcoded secrets | {PASS/FAIL} | {Details} |
+| XSS vulnerabilities | {PASS/FAIL} | {Details} |
+| SQL injection patterns | {PASS/FAIL} | {Details} |
+| Dependency vulnerabilities | {PASS/FAIL} | `npm audit --audit-level=high` |
+| Input validation | {PASS/FAIL} | {Details} |
+| Auth middleware | {PASS/FAIL} | {Details} |
+
+**Security status:** {PASS/FAIL}
+**Issues found:** {List if any}
+
+**Security notes:**
+{Any observations, recommendations for hardening}
+
+*MVP Mode: Only hardcoded secrets check is required; others are informational*
+
+---
+
+## CI/CD Verification (Production Mode Only)
+
+**Workflow file:** `.github/workflows/ci.yml`
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| Workflow exists | {YES/NO} | |
+| TypeScript check stage | {YES/NO} | |
+| Lint stage | {YES/NO} | |
+| Test stage | {YES/NO} | |
+| Build stage | {YES/NO} | |
+| Push trigger | {YES/NO} | |
+| Pull request trigger | {YES/NO} | |
+
+**CI/CD status:** {PASS/FAIL}
+
+**CI/CD notes:**
+{Any observations about workflow quality, missing stages}
+
+*MVP Mode: This section is SKIPPED*
+
+---
+
 ## Quality Assessment
 
 ### Code Quality: {EXCELLENT / GOOD / ACCEPTABLE / POOR}
@@ -899,6 +1183,129 @@ Refer to the status selection decision tree above. Key principles:
 - ❌ Critical success criteria clearly not met
 - ❌ Code quality is POOR
 - ❌ Security vulnerabilities detected
+
+---
+
+# Mode-Aware Validation Logic
+
+The validator must adjust its behavior based on the mode specified in the task context.
+
+## How to Check Mode
+
+The mode is specified in your task prompt. Look for:
+
+```
+Mode: PRODUCTION
+```
+
+or
+
+```
+Mode: MVP
+```
+
+**Default behavior:** If no mode is specified, assume **MVP mode** for backward compatibility.
+
+## Mode-Specific Pass Criteria
+
+### Production Mode (Mode: PRODUCTION)
+
+**All standard checks must pass:**
+- TypeScript compilation: Zero errors (REQUIRED)
+- Linting: Zero errors (REQUIRED)
+- Build: Succeeds (REQUIRED)
+- Unit tests: All pass (REQUIRED)
+
+**Additional production requirements:**
+- **Coverage >= 70%** (REQUIRED) - Failure if below threshold
+- **Security checklist clear** (REQUIRED) - All 6 security checks must pass
+- **CI/CD workflow exists** (REQUIRED) - .github/workflows/ci.yml with lint, test, build stages
+
+**Production mode status decision:**
+
+| Check | Result | Status |
+|-------|--------|--------|
+| TypeScript/Build/Tests | Any fail | FAIL |
+| Coverage < 70% | Fail | FAIL |
+| Security issues found | Fail | FAIL |
+| Missing CI/CD | Fail | FAIL |
+| All pass | Pass | PASS (if confidence > 80%) |
+
+### MVP Mode (Mode: MVP)
+
+**Required checks (must pass):**
+- TypeScript compilation: Zero errors (REQUIRED)
+- Linting: Zero errors (REQUIRED)
+- Build: Succeeds (REQUIRED)
+- Unit tests: All pass (REQUIRED)
+
+**Relaxed checks (informational only):**
+- **Coverage check: SKIPPED** - Do not fail for low coverage
+- **Security check: Basic only** - Only hardcoded secrets check is required; other security checks are warnings only
+- **CI/CD verification: SKIPPED** - Do not fail for missing CI/CD
+
+**MVP mode status decision:**
+
+| Check | Result | Status |
+|-------|--------|--------|
+| TypeScript/Build/Tests | Any fail | FAIL |
+| Coverage < 70% | N/A | (SKIPPED) |
+| Hardcoded secrets found | Fail | FAIL |
+| Other security issues | Warning | (INFORMATIONAL) |
+| Missing CI/CD | N/A | (SKIPPED) |
+| All required pass | Pass | PASS (if confidence > 80%) |
+
+## Mode in Validation Report
+
+Always document the mode in your validation report:
+
+```markdown
+## Validation Context
+
+**Mode:** {PRODUCTION / MVP}
+**Mode-specific behavior:**
+- Coverage gate: {ENFORCED / SKIPPED}
+- Security validation: {FULL / BASIC}
+- CI/CD verification: {ENFORCED / SKIPPED}
+```
+
+## Example Mode-Aware Report Sections
+
+### Production Mode Example
+
+```markdown
+## Coverage Analysis (Production Mode)
+
+| Metric | Value | Threshold | Status |
+|--------|-------|-----------|--------|
+| Statements | 72% | >= 70% | PASS |
+| Branches | 68% | >= 70% | FAIL |
+| Functions | 75% | >= 70% | PASS |
+| Lines | 71% | >= 70% | PASS |
+
+**Coverage status:** FAIL (Branch coverage below 70% threshold)
+**Impact:** This is a blocking issue in Production mode.
+```
+
+### MVP Mode Example
+
+```markdown
+## Coverage Analysis (MVP Mode - SKIPPED)
+
+Coverage verification is not required in MVP mode.
+
+**Note:** For production deployment, run with `Mode: PRODUCTION` to enforce 70% coverage threshold.
+
+---
+
+## Security Validation (MVP Mode - BASIC)
+
+**Hardcoded secrets check:** PASS (no secrets found)
+
+**Note:** Full security validation (XSS, SQL injection, dependency audit) skipped in MVP mode. Run with `Mode: PRODUCTION` for comprehensive security checks.
+```
+
+---
 
 # Categorizing Issues for Healing
 

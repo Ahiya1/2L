@@ -1,7 +1,7 @@
-current_plan: plan-10
-global_iteration_counter: 9
-current_iteration: 10
-current_phase: validation
+current_plan: plan-12
+global_iteration_counter: 12
+current_iteration: 12
+current_phase: complete
 plans:
 - plan_id: plan-1
   name: 2L System Tightening - Dashboard + MCP Cleanup + Healing Exploration
@@ -74,7 +74,7 @@ plans:
   - 10
 - plan_id: plan-10
   name: Cross-Project Learning Aggregation
-  status: PLANNED
+  status: COMPLETE
   created_at: '2025-11-27T16:20:00Z'
   vision_file: .2L/plan-10/vision.md
   description: 'Complete meta-circular learning loop: aggregate framework issues from
@@ -85,4 +85,26 @@ plans:
   master_plan_file: .2L/plan-10/master-plan.yaml
   iterations:
   - 10
-next_iteration_number: 10
+  completed_at: '2025-11-27T17:05:00Z'
+- plan_id: plan-11
+  name: 2L Protocol Simplification - Intelligence Consolidation
+  status: VISIONED
+  created_at: '2025-12-07T00:00:00Z'
+  vision_file: .2L/plan-11/vision.md
+  description: 'Remove intelligence-diluting scripts, let agents think. Simplify reflection
+    cycle, fix context compaction, rewrite /2l-improve as meditation trigger.'
+- plan_id: plan-12
+  name: 2L Production Hardening
+  status: COMPLETE
+  created_at: '2025-12-10T09:00:00Z'
+  completed_at: '2025-12-10T12:00:00Z'
+  vision_file: .2L/plan-12/vision.md
+  master_plan_file: .2L/plan-12/master-plan.yaml
+  description: 'Create /2l-prod command with test requirements, CI/CD generation, security
+    scanning. Keep /2l-mvp fast for prototypes.'
+  master_exploration:
+    num_explorers: 3
+    complexity_level: MEDIUM
+  iterations:
+    - 12
+next_iteration_number: 12

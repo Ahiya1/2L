@@ -1,5 +1,6 @@
 ---
 name: 2l-planner
+model: opus
 description: Creates comprehensive development plan from exploration findings
 tools: Read, Write, Glob
 ---
@@ -355,6 +356,505 @@ Provide copy-pasteable code patterns for every common operation:
 ```
 
 **IMPORTANT:** Every pattern should include **full, working code examples** that builders can copy and adapt. No pseudocode!
+
+## Production Mode Pattern Requirements
+
+When `Mode: PRODUCTION` is specified, patterns.md MUST include these additional sections:
+
+### Testing Patterns (REQUIRED in Production Mode)
+
+Include copy-pasteable patterns for:
+
+```markdown
+## Testing Patterns
+
+### Test File Naming Conventions
+- Unit tests: `{module}.test.ts` (same directory as module)
+- Integration tests: `{feature}.integration.test.ts` (in `__tests__/` directory)
+- E2E tests: `{flow}.e2e.test.ts` (in `e2e/` directory)
+
+### Test File Structure
+\`\`\`typescript
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { functionToTest } from '../module';
+
+describe('ModuleName', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  describe('functionToTest', () => {
+    it('should handle normal case', () => {
+      // Arrange
+      const input = 'test';
+
+      // Act
+      const result = functionToTest(input);
+
+      // Assert
+      expect(result).toBe('expected');
+    });
+
+    it('should handle edge cases', () => {
+      expect(() => functionToTest(null)).toThrow('Expected error');
+    });
+  });
+});
+\`\`\`
+
+### Mocking Strategies
+\`\`\`typescript
+// Mock external dependencies
+vi.mock('@/lib/external', () => ({
+  externalFunction: vi.fn().mockResolvedValue('mocked'),
+}));
+
+// Mock Prisma
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+}));
+
+// Mock fetch
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({ data: 'mocked' }),
+}));
+
+// Spy on existing methods
+const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+\`\`\`
+
+### Coverage Expectations by Module Type
+| Module Type | Minimum Coverage | Target Coverage |
+|-------------|------------------|-----------------|
+| Utils/Helpers | 90% | 95% |
+| API Routes | 80% | 90% |
+| Services | 85% | 90% |
+| Components | 70% | 80% |
+| Hooks | 75% | 85% |
+
+### Test Data Factories
+\`\`\`typescript
+// lib/test-utils/factories.ts
+export const createMockUser = (overrides: Partial<User> = {}): User => ({
+  id: 'user-123',
+  email: 'test@example.com',
+  name: 'Test User',
+  role: 'user',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  ...overrides,
+});
+
+export const createMockProject = (overrides: Partial<Project> = {}): Project => ({
+  id: 'project-456',
+  name: 'Test Project',
+  ownerId: 'user-123',
+  status: 'active',
+  createdAt: new Date('2024-01-01'),
+  ...overrides,
+});
+\`\`\`
+```
+
+### Security Patterns (REQUIRED in Production Mode)
+
+Include copy-pasteable patterns for:
+
+```markdown
+## Security Patterns
+
+### Input Validation (Zod Schemas)
+\`\`\`typescript
+import { z } from 'zod';
+
+// Define schemas for all user input
+export const createUserSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  name: z.string().min(1, 'Name required').max(100, 'Name too long'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+// Use at API boundaries
+export async function POST(req: Request) {
+  const body = await req.json();
+  const validated = createUserSchema.parse(body); // Throws on invalid
+  // ... proceed with validated data
+}
+\`\`\`
+
+### Auth Middleware Patterns
+\`\`\`typescript
+// lib/auth.ts
+import { getSession } from '@/lib/session';
+
+export class UnauthorizedError extends Error {
+  statusCode = 401;
+  constructor(message = 'Authentication required') {
+    super(message);
+  }
+}
+
+export class ForbiddenError extends Error {
+  statusCode = 403;
+  constructor(message = 'Permission denied') {
+    super(message);
+  }
+}
+
+export async function requireAuth(req: Request) {
+  const session = await getSession(req);
+  if (!session?.user) {
+    throw new UnauthorizedError();
+  }
+  return session.user;
+}
+
+export async function requireRole(req: Request, roles: string[]) {
+  const user = await requireAuth(req);
+  if (!roles.includes(user.role)) {
+    throw new ForbiddenError('Insufficient permissions');
+  }
+  return user;
+}
+\`\`\`
+
+### Secure API Endpoint Patterns
+\`\`\`typescript
+// app/api/protected/route.ts
+import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
+import { resourceSchema } from '@/lib/validation';
+
+export async function POST(req: Request) {
+  try {
+    // 1. Authenticate
+    const user = await requireAuth(req);
+
+    // 2. Validate input
+    const body = await req.json();
+    const validated = resourceSchema.parse(body);
+
+    // 3. Authorize (check user can perform action)
+    if (validated.ownerId !== user.id && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // 4. Process request
+    const result = await processResource(validated, user);
+
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
+    // Sanitize error responses (never expose stack traces)
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: 'Validation failed' }, { status: 400 });
+    }
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+    console.error('API error:', error); // Log for debugging
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+\`\`\`
+
+### Environment Variable Usage
+\`\`\`typescript
+// lib/env.ts - Type-safe environment variables
+import { z } from 'zod';
+
+const envSchema = z.object({
+  // Database
+  DATABASE_URL: z.string().url(),
+
+  // Auth
+  AUTH_SECRET: z.string().min(32),
+  NEXTAUTH_URL: z.string().url().optional(),
+
+  // External APIs (never hardcode these!)
+  API_KEY: z.string().min(1),
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
+
+  // Runtime
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+});
+
+// Parse and validate at startup
+export const env = envSchema.parse(process.env);
+
+// NEVER do this:
+// const apiKey = "sk-hardcoded-secret";  // SECURITY RISK!
+\`\`\`
+```
+
+### Error Handling Patterns (REQUIRED in Production Mode)
+
+Include copy-pasteable patterns for:
+
+```markdown
+## Error Handling Patterns
+
+### Custom Error Classes
+\`\`\`typescript
+// lib/errors.ts
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public statusCode: number = 500
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, public details?: unknown) {
+    super(message, 'VALIDATION_ERROR', 400);
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(resource: string) {
+    super(\`\${resource} not found\`, 'NOT_FOUND', 404);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 'CONFLICT', 409);
+  }
+}
+\`\`\`
+
+### Error Boundary Usage (React)
+\`\`\`typescript
+// components/ErrorBoundary.tsx
+'use client';
+import { Component, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+    // Send to error tracking service in production
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? (
+        <div className="error-fallback">
+          <h2>Something went wrong</h2>
+          <button onClick={() => this.setState({ hasError: false })}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+\`\`\`
+
+### API Error Response Format
+\`\`\`typescript
+// Standard error response structure
+interface ErrorResponse {
+  error: string;           // Human-readable message
+  code?: string;           // Machine-readable code
+  details?: unknown;       // Additional info (validation errors, etc.)
+}
+
+// Example error handler
+export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
+  if (error instanceof ZodError) {
+    return NextResponse.json(
+      { error: 'Validation failed', code: 'VALIDATION_ERROR', details: error.errors },
+      { status: 400 }
+    );
+  }
+
+  if (error instanceof AppError) {
+    return NextResponse.json(
+      { error: error.message, code: error.code },
+      { status: error.statusCode }
+    );
+  }
+
+  // Unknown error - never expose details
+  console.error('Unexpected error:', error);
+  return NextResponse.json(
+    { error: 'Internal server error', code: 'INTERNAL_ERROR' },
+    { status: 500 }
+  );
+}
+\`\`\`
+
+### Logging Approach
+\`\`\`typescript
+// lib/logger.ts
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+const LOG_LEVELS: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+const currentLevel = process.env.LOG_LEVEL as LogLevel || 'info';
+
+export const logger = {
+  debug: (message: string, data?: unknown) => {
+    if (LOG_LEVELS[currentLevel] <= LOG_LEVELS.debug) {
+      console.debug(\`[DEBUG] \${message}\`, data ?? '');
+    }
+  },
+  info: (message: string, data?: unknown) => {
+    if (LOG_LEVELS[currentLevel] <= LOG_LEVELS.info) {
+      console.info(\`[INFO] \${message}\`, data ?? '');
+    }
+  },
+  warn: (message: string, data?: unknown) => {
+    if (LOG_LEVELS[currentLevel] <= LOG_LEVELS.warn) {
+      console.warn(\`[WARN] \${message}\`, data ?? '');
+    }
+  },
+  error: (message: string, error?: unknown) => {
+    console.error(\`[ERROR] \${message}\`, error ?? '');
+  },
+};
+
+// Usage: Never use console.log in production code
+// Use logger.info(), logger.error(), etc. instead
+\`\`\`
+```
+
+### CI/CD Patterns (REQUIRED in Production Mode)
+
+Include copy-pasteable patterns for:
+
+```markdown
+## CI/CD Patterns
+
+### Branch Strategy
+- \`main\` - Production branch (protected, requires PR)
+- \`develop\` - Integration branch (optional)
+- \`feature/*\` - Feature branches
+- \`fix/*\` - Bug fix branches
+- \`hotfix/*\` - Production hotfixes
+
+### GitHub Actions Workflow Structure
+\`\`\`yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: \${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:coverage
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [quality, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+\`\`\`
+
+### Deployment Triggers
+\`\`\`yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        run: |
+          # Add deployment commands here
+          # e.g., Vercel, AWS, Railway, etc.
+\`\`\`
+```
 
 ## 4. builder-tasks.md
 

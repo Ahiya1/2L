@@ -1,0 +1,95 @@
+plan_id: plan-12
+created_at: "2025-12-10T09:30:00Z"
+status: PLANNED
+total_iterations: 1
+
+strategy: |
+  Single iteration with 4 parallel builders. All changes are to markdown prompt files.
+
+  Key design decision: Create separate /2l-prod command instead of --mode flag.
+  This makes intent explicit and keeps /2l-mvp fast for prototypes.
+
+  Builder allocation:
+  - Builder-1: New /2l-prod command + minor 2l-mvp.md updates
+  - Builder-2: 2l-builder.md (test generation, CI/CD, security patterns)
+  - Builder-3: 2l-validator.md (coverage gate, security scan, CI verification)
+  - Builder-4: 2l-planner.md + 2l-healer.md (patterns, test/security healing)
+
+complexity_assessment:
+  level: MEDIUM
+  rationale: |
+    - 7 features across 6-7 files
+    - All changes are markdown prompt engineering
+    - No new dependencies or infrastructure
+    - Reusable patterns exist in Prod/wealth and Prod/mirror-of-dreams
+  num_explorers: 3
+  num_builders: 4
+
+iterations:
+  - iteration_id: 1
+    global_iteration: 12
+    name: "Production Hardening Implementation"
+    vision: "Add /2l-prod command with test requirements, CI/CD generation, and security scanning"
+    scope: |
+      1. Create commands/2l-prod.md (based on 2l-mvp.md with production gates)
+      2. Update commands/2l-mvp.md to set mode=mvp in config
+      3. Update agents/2l-builder.md for test generation and CI/CD
+      4. Update agents/2l-validator.md for coverage and security enforcement
+      5. Update agents/2l-planner.md for production patterns in patterns.md
+      6. Update agents/2l-healer.md for test and security fixing categories
+    status: PENDING
+    dependencies: []
+
+    builder_assignments:
+      builder-1:
+        name: "Command System"
+        files:
+          - commands/2l-prod.md (NEW)
+          - commands/2l-mvp.md (minor updates)
+        tasks:
+          - Create /2l-prod command based on 2l-mvp.md
+          - Add mode=production to config propagation
+          - Add production quality gates (tests required, CI/CD required, security scan)
+          - Update /2l-mvp to explicitly set mode=mvp
+
+      builder-2:
+        name: "Builder Agent Updates"
+        files:
+          - agents/2l-builder.md
+        tasks:
+          - Add production mode section requiring test generation
+          - Add CI/CD workflow generation when missing
+          - Add security pattern requirements
+          - Keep MVP mode fast (tests optional)
+
+      builder-3:
+        name: "Validator Agent Updates"
+        files:
+          - agents/2l-validator.md
+        tasks:
+          - Add 70% coverage gate for production mode
+          - Add security checklist (secrets, XSS, SQL injection, npm audit)
+          - Add CI/CD verification (workflow exists with required stages)
+          - MVP mode skips coverage/CI requirements
+
+      builder-4:
+        name: "Planner & Healer Updates"
+        files:
+          - agents/2l-planner.md
+          - agents/2l-healer.md
+        tasks:
+          - Update planner to include Testing Patterns in patterns.md
+          - Update planner to include Security Patterns in patterns.md
+          - Update planner to include Error Handling Patterns
+          - Update planner to include CI/CD Patterns
+          - Add test failure healing category to healer
+          - Add security issue healing category to healer
+
+success_criteria:
+  - /2l-prod command exists and enforces production gates
+  - /2l-mvp remains fast without mandatory tests
+  - Builders generate tests in production mode
+  - Validators enforce 70% coverage in production mode
+  - Security scanning catches hardcoded secrets, XSS, SQL injection
+  - Patterns.md includes Testing, Security, Error Handling, CI/CD sections
+  - Healers can fix test failures and security issues

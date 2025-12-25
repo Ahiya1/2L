@@ -1,0 +1,14 @@
+{
+  "name": "2l-marketplace",
+  "description": "2L Development Framework - Orchestration for complex iterative projects",
+  "owner": {
+    "name": "Ahiya"
+  },
+  "plugins": [
+    {
+      "name": "2l",
+      "source": ".",
+      "description": "Iterative orchestration with exploration, planning, building, integration, validation, and healing phases"
+    }
+  ]
+}

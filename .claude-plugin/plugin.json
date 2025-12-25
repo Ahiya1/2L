@@ -1,0 +1,20 @@
+{
+  "name": "2l",
+  "version": "1.0.0",
+  "description": "2L Development Framework - Iterative orchestration with exploration, planning, building, integration, validation, and healing phases. Enables complex project development through coordinated agent pipelines.",
+  "author": {
+    "name": "Ahiya"
+  },
+  "keywords": [
+    "orchestration",
+    "development",
+    "framework",
+    "iterative",
+    "agents",
+    "pipeline",
+    "exploration",
+    "validation",
+    "healing"
+  ],
+  "repository": "https://github.com/ahiya/2L"
+}

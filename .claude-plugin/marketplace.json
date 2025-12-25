@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "2l",
-      "source": ".",
+      "source": "./",
       "description": "Iterative orchestration with exploration, planning, building, integration, validation, and healing phases"
     }
   ]

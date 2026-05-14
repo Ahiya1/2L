@@ -10,7 +10,7 @@ Get up and running with 2L in 5 simple steps:
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/ahiyalala/2L.git && cd 2L
+git clone https://github.com/Ahiya1/2L.git && cd 2L
 ```
 
 ### 2. Install 2L

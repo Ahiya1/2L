@@ -1,5 +1,7 @@
 # 2L - Two-Level Orchestration System
 
+[![Skillselion Top 25](https://skillselion.com/badge/marketplace/Ahiya1/2L.svg?award=1)](https://skillselion.com/marketplace/Ahiya1/2L)
+
 2L is an AI agent orchestration system that breaks down complex development tasks into manageable iterations executed by specialized agents.
 
 ---
